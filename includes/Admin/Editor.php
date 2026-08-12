@@ -3,9 +3,9 @@
  * Editor sidebar assets.
  */
 
-namespace Forwp\Seo\Admin;
+namespace Forwp\SeoHelper\Admin;
 
-use Forwp\Seo\CrossPosting\Module as CrossPostingModule;
+use Forwp\SeoHelper\CrossPosting\Module as CrossPostingModule;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -42,7 +42,7 @@ final class Editor {
 		$deps = [ 'wp-plugins', 'wp-edit-post', 'wp-data', 'wp-element', 'wp-components', 'wp-i18n', 'wp-api-fetch', 'wp-blocks' ];
 		$handle = 'forwp-seo-editor-sidebar';
 
-		wp_register_script( $handle, '', $deps, FORWP_SEO_VERSION, true );
+		wp_register_script( $handle, '', $deps, FORWP_SEO_HELPER_VERSION, true );
 		wp_enqueue_script( $handle );
 
 		wp_add_inline_script(
@@ -51,7 +51,7 @@ final class Editor {
 			'before'
 		);
 
-		$script_path = FORWP_SEO_PATH . 'assets/js/seo-sidebar.js';
+		$script_path = FORWP_SEO_HELPER_PATH . 'assets/js/seo-sidebar.js';
 		if ( file_exists( $script_path ) ) {
 			$inline = file_get_contents( $script_path );
 			if ( $inline ) {

@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: 4wp SEO
- * Description: Internal SEO plugin with Schema.org, GSC, and LLMS.txt modules.
- * Version: 0.2.0
+ * Plugin Name: 4WP SEO Helper
+ * Description: Internal SEO toolkit: TechArticle schema, SEO inventory API, GSC, LLMS.txt, cross posting.
+ * Version: 0.6.0
  * Author: 4wp.dev
  * Requires PHP: 8.0
  */
@@ -11,22 +11,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FORWP_SEO_VERSION', '0.2.0' );
-define( 'FORWP_SEO_FILE', __FILE__ );
-define( 'FORWP_SEO_PATH', plugin_dir_path( __FILE__ ) );
-define( 'FORWP_SEO_URL', plugin_dir_url( __FILE__ ) );
+define( 'FORWP_SEO_HELPER_VERSION', '0.6.0' );
+define( 'FORWP_SEO_HELPER_FILE', __FILE__ );
+define( 'FORWP_SEO_HELPER_PATH', plugin_dir_path( __FILE__ ) );
+define( 'FORWP_SEO_HELPER_URL', plugin_dir_url( __FILE__ ) );
 
-require_once FORWP_SEO_PATH . 'includes/autoload.php';
+require_once FORWP_SEO_HELPER_PATH . 'includes/autoload.php';
 
-if ( class_exists( '\Forwp\Seo\Core\Extension' ) ) {
-	\Forwp\Seo\Core\Extension::get_instance();
+if ( class_exists( '\Forwp\SeoHelper\Core\Extension' ) ) {
+	\Forwp\SeoHelper\Core\Extension::get_instance();
 }
 
 register_activation_hook(
 	__FILE__,
 	function () {
-		if ( class_exists( '\Forwp\Seo\Llms\Generator' ) ) {
-			\Forwp\Seo\Llms\Generator::activate();
+		if ( class_exists( '\Forwp\SeoHelper\Llms\Generator' ) ) {
+			\Forwp\SeoHelper\Llms\Generator::activate();
+		}
+		if ( class_exists( '\Forwp\SeoHelper\Inventory\Module' ) ) {
+			\Forwp\SeoHelper\Inventory\Module::activate();
 		}
 	}
 );
@@ -34,9 +37,8 @@ register_activation_hook(
 register_deactivation_hook(
 	__FILE__,
 	function () {
-		if ( class_exists( '\Forwp\Seo\Llms\Generator' ) ) {
-			\Forwp\Seo\Llms\Generator::deactivate();
+		if ( class_exists( '\Forwp\SeoHelper\Llms\Generator' ) ) {
+			\Forwp\SeoHelper\Llms\Generator::deactivate();
 		}
 	}
 );
-

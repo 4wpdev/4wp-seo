@@ -3,7 +3,7 @@
  * Cross posting module toggle and hooks.
  */
 
-namespace Forwp\Seo\CrossPosting;
+namespace Forwp\SeoHelper\CrossPosting;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

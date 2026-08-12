@@ -3,9 +3,9 @@
  * Cross posting content formatter.
  */
 
-namespace Forwp\Seo\CrossPosting;
+namespace Forwp\SeoHelper\CrossPosting;
 
-use Forwp\Seo\Schema\TechArticle;
+use Forwp\SeoHelper\Schema\TechArticle;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {

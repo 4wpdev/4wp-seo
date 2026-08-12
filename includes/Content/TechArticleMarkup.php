@@ -3,9 +3,9 @@
  * Build Gutenberg markup from TechArticle section data (import / editor shell).
  */
 
-namespace Forwp\Seo\Content;
+namespace Forwp\SeoHelper\Content;
 
-use Forwp\Seo\Blocks\TechArticleWrappers;
+use Forwp\SeoHelper\Blocks\TechArticleWrappers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -59,6 +59,11 @@ final class TechArticleMarkup {
 		$faq = $sections['faq'] ?? [];
 		if ( is_array( $faq ) && $faq !== [] ) {
 			$parts[] = self::build_faq_block( $faq );
+		}
+
+		$completion = $sections['completion'] ?? [];
+		if ( is_array( $completion ) && $completion !== [] ) {
+			$parts[] = self::build_completion_block( $completion );
 		}
 
 		return implode( "\n\n", array_filter( $parts ) );
@@ -328,6 +333,25 @@ final class TechArticleMarkup {
 			"\n" . self::heading_block( __( 'Real cases', '4wp-seo' ), 2 ),
 			"<!-- wp:list -->\n<ul class=\"wp-block-list\">{$list}</ul>\n<!-- /wp:list -->"
 		);
+	}
+
+	/**
+	 * @param array<string, array<int, string>> $completion
+	 */
+	private static function build_completion_block( array $completion ): string {
+		$attrs = [
+			'perfect'  => array_values( array_filter( (array) ( $completion['perfect'] ?? [] ), 'is_string' ) ),
+			'optimize' => array_values( array_filter( (array) ( $completion['optimize'] ?? [] ), 'is_string' ) ),
+			'next'     => array_values( array_filter( (array) ( $completion['next'] ?? [] ), 'is_string' ) ),
+		];
+
+		if ( empty( $attrs['perfect'] ) && empty( $attrs['optimize'] ) && empty( $attrs['next'] ) ) {
+			return '';
+		}
+
+		$json = wp_json_encode( $attrs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+
+		return sprintf( '<!-- wp:forwp-seo/techarticle-completion %s /-->', $json );
 	}
 
 	/**

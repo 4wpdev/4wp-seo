@@ -1,0 +1,34 @@
+.forwp-seo-techarticle-completion {
+	margin-block: 2rem;
+}
+
+.forwp-seo-techarticle-completion__grid {
+	display: grid;
+	gap: 1.5rem;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.forwp-seo-techarticle-completion__title {
+	font-size: 1.125rem;
+	margin: 0 0 0.75rem;
+}
+
+.forwp-seo-techarticle-completion__list {
+	margin: 0;
+	padding-inline-start: 1.25rem;
+}
+
+.forwp-seo-techarticle-completion__column--perfect {
+	border-top: 3px solid #2e7d32;
+	padding-top: 0.75rem;
+}
+
+.forwp-seo-techarticle-completion__column--optimize {
+	border-top: 3px solid #ed6c02;
+	padding-top: 0.75rem;
+}
+
+.forwp-seo-techarticle-completion__column--next {
+	border-top: 3px solid #1565c0;
+	padding-top: 0.75rem;
+}

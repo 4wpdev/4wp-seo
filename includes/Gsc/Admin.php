@@ -3,7 +3,7 @@
  * Google Search Console admin screen.
  */
 
-namespace Forwp\Seo\Gsc;
+namespace Forwp\SeoHelper\Gsc;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

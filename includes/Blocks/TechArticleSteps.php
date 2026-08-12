@@ -3,7 +3,7 @@
  * TechArticle Steps block registration.
  */
 
-namespace Forwp\Seo\Blocks;
+namespace Forwp\SeoHelper\Blocks;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -29,9 +29,9 @@ final class TechArticleSteps {
 	public function register_block(): void {
 		wp_register_script(
 			'forwp-seo-techarticle-steps',
-			FORWP_SEO_URL . 'assets/js/techarticle-steps.js',
+			FORWP_SEO_HELPER_URL . 'assets/js/techarticle-steps.js',
 			[ 'wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n' ],
-			FORWP_SEO_VERSION,
+			FORWP_SEO_HELPER_VERSION,
 			true
 		);
 

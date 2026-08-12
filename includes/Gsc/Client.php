@@ -3,7 +3,7 @@
  * Google Search Console API client.
  */
 
-namespace Forwp\Seo\Gsc;
+namespace Forwp\SeoHelper\Gsc;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

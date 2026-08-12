@@ -3,7 +3,7 @@
  * External schema entities integration.
  */
 
-namespace Forwp\Seo\Schema;
+namespace Forwp\SeoHelper\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

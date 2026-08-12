@@ -3,7 +3,7 @@
  * TechArticle schema handling.
  */
 
-namespace Forwp\Seo\Schema;
+namespace Forwp\SeoHelper\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

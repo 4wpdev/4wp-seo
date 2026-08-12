@@ -3,7 +3,7 @@
  * TechArticle schema REST preview.
  */
 
-namespace Forwp\Seo\Schema;
+namespace Forwp\SeoHelper\Schema;
 
 use WP_REST_Request;
 

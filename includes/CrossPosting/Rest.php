@@ -3,7 +3,7 @@
  * Cross posting REST endpoints.
  */
 
-namespace Forwp\Seo\CrossPosting;
+namespace Forwp\SeoHelper\CrossPosting;
 
 use WP_REST_Request;
 

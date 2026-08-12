@@ -3,17 +3,19 @@
  * Plugin bootstrap.
  */
 
-namespace Forwp\Seo\Core;
+namespace Forwp\SeoHelper\Core;
 
-use Forwp\Seo\Admin\Editor;
-use Forwp\Seo\Admin\Menu;
-use Forwp\Seo\Blocks\TechArticleWrappers;
-use Forwp\Seo\CrossPosting\Module as CrossPostingModule;
-use Forwp\Seo\Gsc\Admin as GscAdmin;
-use Forwp\Seo\Llms\Generator;
-use Forwp\Seo\Schema\TechArticle;
-use Forwp\Seo\Schema\TechArticleRest;
-use Forwp\Seo\Schema\ExternalEntities;
+use Forwp\SeoHelper\Admin\Editor;
+use Forwp\SeoHelper\Admin\Menu;
+use Forwp\SeoHelper\Admin\Notices;
+use Forwp\SeoHelper\Blocks\TechArticleWrappers;
+use Forwp\SeoHelper\CrossPosting\Module as CrossPostingModule;
+use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\Llms\Generator;
+use Forwp\SeoHelper\Schema\TechArticle;
+use Forwp\SeoHelper\Schema\TechArticleRest;
+use Forwp\SeoHelper\Schema\ExternalEntities;
+use Forwp\SeoHelper\Inventory\Module as InventoryModule;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -45,16 +47,18 @@ final class Extension {
 		TechArticleWrappers::get_instance();
 		Generator::get_instance();
 		CrossPostingModule::get_instance();
+		InventoryModule::get_instance();
 		GscAdmin::get_instance(); // Must be initialized for REST API callback
 
 		if ( is_admin() ) {
 			Menu::get_instance();
 			Editor::get_instance();
+			Notices::get_instance();
 		}
 	}
 
 	public function load_textdomain(): void {
-		load_plugin_textdomain( '4wp-seo', false, dirname( plugin_basename( FORWP_SEO_FILE ) ) . '/languages' );
+		load_plugin_textdomain( '4wp-seo', false, dirname( plugin_basename( FORWP_SEO_HELPER_FILE ) ) . '/languages' );
 	}
 
 	public function register_post_meta(): void {

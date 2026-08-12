@@ -1,43 +1,49 @@
-# 4wp-seo
+# 4wp-seo-helper
 
-Внутрішній (непублічний) плагін. Назва плагіна 4wp, у коді/JS використовується forwp.
-
-## Roadmap (чернетка)
-
-### v0.1 — Schema.org (TechArticle)
-- Одна адмін-сторінка налаштувань (без UI/UX надбудов).
-- Сайдбар у редакторі посту: статус наявності Code blocks + Steps.
-- Тип сторінки: TechArticle (перемикач на пості).
-- Умова TechArticle:
-  - є мінімум один core Code block;
-  - є TechArticle Steps (кастомні блоки).
-- JSON-LD виводимо як TechArticle в загальному контенті.
-- Якщо активний `4wp-advanced-code`:
-  - використовуємо зібрані `softwareCode`;
-  - перехоплюємо стандартний JSON-LD від `4wp-advanced-code` і формуємо єдиний TechArticle.
-- Автоматично додаємо `about` (контекст).
-
-### v0.2 — Google Search Console (мінімум)
-- OAuth 2.0 конект.
-- Список properties → вибір 1 → прив'язка до сайту (без мультисайтів).
-- URL inspection (один URL):
-  - Index status, Coverage state, Last crawl, Canonical (user/google), Robots state.
-- Search Analytics (page filter, last 28 days):
-  - clicks, impressions, CTR, avg position.
-
-### v0.3 — LLMS.txt
-- Автогенерація `llms.txt` лише якщо TechArticle валідний.
-
-### v0.4 — Cross posting (module)
-- Модуль у 4wp-seo з можливістю вмикати.
-- Список платформ у sidebar редактора (не dropdown).
-- Генерація тексту на льоту:
-  - dev.to, Medium: Markdown.
-  - LinkedIn: заголовок + текст (ліміт 400 символів).
-  - X, Bluesky: короткий текст з лімітом платформи.
+Внутрішній плагін 4wp.dev. Namespace: `Forwp\SeoHelper`.
 
 ## Модулі
-- Schema.org
-- LLMS.txt
-- Meta Tags (майбутнє)
-- Sitemap (майбутнє)
+
+### TechArticle (Schema.org)
+- Gutenberg wrappers: goal, context, steps, issues, **completion**
+- JSON-LD TechArticle на фронті
+- Інтеграція з `4wp-advanced-code` (softwareCode у hasPart)
+- Markup builder для імпорту контенту (`TechArticleMarkup`)
+
+### SEO Inventory (v0.4+)
+Translation-aware SEO ops шар поверх Yoast / AIOSEO.
+
+- **Adapters:** Yoast, All in One SEO, fallback
+- **Multilingual:** Polylang, WPML, single-language
+- **CPT:** auto-discovery (`public` + `show_ui`), без hardcode
+- **REST:** `forwp-seo-helper/v1/seo-inventory/*`
+- **Admin:** 4wp SEO → SEO Inventory (table, filters, CSV export)
+- **Sheets:** `docs/google-sheets-sync.gs`
+
+Контракт API: `GET /wp-json/forwp-seo-helper/v1/seo-inventory/meta`
+
+Auth: `Authorization: Bearer <token>` (4wp SEO → Settings) або `manage_options`.
+
+### Google Search Console
+OAuth, URL inspection, search analytics (28 days).
+
+### LLMS.txt
+`/llms.txt` для постів з валідним TechArticle.
+
+### Cross posting
+Markdown / social snippets з редактора (module toggle).
+
+## Фільтри
+
+```php
+// Виключити CPT з inventory
+add_filter( 'forwp_seo_inventory_exclude_post_types', fn( $types ) => array_merge( $types, [ 'shop_order' ] ) );
+
+// CORS для зовнішніх клієнтів (не dashboard — окремий крок)
+add_filter( 'forwp_seo_inventory_cors_origins', fn() => [ 'https://script.google.com' ] );
+```
+
+## Поза scope v0.5
+
+- `4wp-analytics-dashboard` UI — окремий репозиторій, не чіпаємо
+- Rename block names `forwp-seo/*` → `forwp-seo-helper/*` (breaking для post_content)

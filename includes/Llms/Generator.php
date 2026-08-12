@@ -3,9 +3,9 @@
  * LLMS.txt generator.
  */
 
-namespace Forwp\Seo\Llms;
+namespace Forwp\SeoHelper\Llms;
 
-use Forwp\Seo\Schema\TechArticle;
+use Forwp\SeoHelper\Schema\TechArticle;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
