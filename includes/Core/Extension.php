@@ -7,11 +7,12 @@ namespace Forwp\Seo\Core;
 
 use Forwp\Seo\Admin\Editor;
 use Forwp\Seo\Admin\Menu;
-use Forwp\Seo\Blocks\TechArticleSteps;
+use Forwp\Seo\Blocks\TechArticleWrappers;
 use Forwp\Seo\CrossPosting\Module as CrossPostingModule;
 use Forwp\Seo\Gsc\Admin as GscAdmin;
 use Forwp\Seo\Llms\Generator;
 use Forwp\Seo\Schema\TechArticle;
+use Forwp\Seo\Schema\TechArticleRest;
 use Forwp\Seo\Schema\ExternalEntities;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -39,8 +40,9 @@ final class Extension {
 		add_action( 'save_post', [ $this, 'save_post_meta' ] );
 
 		TechArticle::get_instance();
+		TechArticleRest::get_instance();
 		ExternalEntities::get_instance();
-		TechArticleSteps::get_instance();
+		TechArticleWrappers::get_instance();
 		Generator::get_instance();
 		CrossPostingModule::get_instance();
 		GscAdmin::get_instance(); // Must be initialized for REST API callback

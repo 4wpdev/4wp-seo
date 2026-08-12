@@ -17,7 +17,7 @@
 	const { PluginSidebar, PluginSidebarMoreMenuItem } = editorApi;
 	const { createBlock } = wp.blocks || {};
 	const { useSelect } = wp.data;
-	const { useState } = wp.element;
+	const { useState, useEffect } = wp.element;
 	const { PanelBody, Button, TextareaControl, Spinner, Notice } = wp.components;
 	const { __ } = wp.i18n;
 	const chartBar = wp.icons ? wp.icons.chartBar : null;
@@ -219,6 +219,38 @@
 		const [ content, setContent ] = useState( '' );
 		const [ loading, setLoading ] = useState( false );
 		const [ error, setError ] = useState( '' );
+		const [ serverTechArticle, setServerTechArticle ] = useState( null );
+		const postType = post?.type || '';
+
+		useEffect( () => {
+			if ( ! postId || postType !== 'practice_case' || ! apiFetch ) {
+				setServerTechArticle( null );
+				return undefined;
+			}
+
+			let cancelled = false;
+
+			apiFetch( {
+				path: '/forwp-seo/v1/techarticle?post_id=' + postId,
+				headers: {
+					'X-WP-Nonce': settings.nonce,
+				},
+			} )
+				.then( ( response ) => {
+					if ( ! cancelled ) {
+						setServerTechArticle( response );
+					}
+				} )
+				.catch( () => {
+					if ( ! cancelled ) {
+						setServerTechArticle( null );
+					}
+				} );
+
+			return () => {
+				cancelled = true;
+			};
+		}, [ postId, postType ] );
 
 		const fetchContent = async ( nextPlatform ) => {
 			if ( ! postId ) {
@@ -258,8 +290,10 @@
 			}
 		};
 
-		const isValid = hasCode && hasSteps;
-		const jsonPreview = {
+		const isValid = serverTechArticle?.valid || ( hasCode && hasSteps );
+		const jsonPreview = serverTechArticle?.schema && Object.keys( serverTechArticle.schema ).length
+			? serverTechArticle.schema
+			: {
 			'@context': 'https://schema.org',
 			'@type': 'TechArticle',
 			headline: postTitle || '...',
@@ -269,13 +303,13 @@
 					name: author.name,
 				}
 				: undefined,
-			softwareCode: codeSamples.map( ( code ) => ( {
-				'@type': 'SoftwareSourceCode',
-				codeSampleType: 'full',
-				programmingLanguage: 'auto',
-				text: code,
-			} ) ),
 			hasPart: [
+				...codeSamples.map( ( code ) => ( {
+					'@type': 'SoftwareSourceCode',
+					codeSampleType: 'full',
+					programmingLanguage: 'auto',
+					text: code,
+				} ) ),
 				{
 					'@type': 'HowTo',
 					step: steps.map( ( step ) => ( {
@@ -319,28 +353,43 @@
 			? el(
 				Notice,
 				{ status: 'success', isDismissible: false },
-				__( 'TechArticle is ready. JSON-LD will be added to the page.', '4wp-seo' )
+				serverTechArticle?.source === 'practice_case_sections'
+					? __( 'TechArticle is ready from practice case section meta. JSON-LD will be added to the page.', '4wp-seo' )
+					: __( 'TechArticle is ready. JSON-LD will be added to the page.', '4wp-seo' )
 			)
 			: el(
 				Notice,
 				{ status: 'warning', isDismissible: false },
-				__( 'Missing required blocks. JSON-LD will not be added.', '4wp-seo' )
+				postType === 'practice_case'
+					? __( 'Missing steps/commands in practice case section meta. JSON-LD will not be added.', '4wp-seo' )
+					: __( 'Missing required blocks. JSON-LD will not be added.', '4wp-seo' )
 			);
 
-		const statusList = el(
-			'ul',
-			{ style: { margin: 0, paddingLeft: '18px' } },
-			el(
-				'li',
-				null,
-				( hasCode ? '✅ ' : '⚠️ ' ) + __( 'Core Code block', '4wp-seo' )
-			),
-			el(
-				'li',
-				null,
-				( hasSteps ? '✅ ' : '⚠️ ' ) + __( 'TechArticle Steps block', '4wp-seo' )
+		const statusList = postType === 'practice_case'
+			? el(
+				'ul',
+				{ style: { margin: 0, paddingLeft: '18px' } },
+				el(
+					'li',
+					null,
+					( serverTechArticle?.valid ? '✅ ' : '⚠️ ' ) +
+						__( 'Practice case section meta (steps + commands)', '4wp-seo' )
+				)
 			)
-		);
+			: el(
+				'ul',
+				{ style: { margin: 0, paddingLeft: '18px' } },
+				el(
+					'li',
+					null,
+					( hasCode ? '✅ ' : '⚠️ ' ) + __( 'Core Code block', '4wp-seo' )
+				),
+				el(
+					'li',
+					null,
+					( hasSteps ? '✅ ' : '⚠️ ' ) + __( 'TechArticle Steps block', '4wp-seo' )
+				)
+			);
 
 		const repairBlock = invalidBlocks.length
 			? el(

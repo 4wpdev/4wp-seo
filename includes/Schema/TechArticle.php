@@ -65,15 +65,72 @@ final class TechArticle {
 	}
 
 	public function is_post_valid( \WP_Post $post ): bool {
-		$enabled = $this->is_enabled_for_post( $post->ID );
-		if ( ! $enabled ) {
+		if ( ! $this->is_enabled_for_post( $post->ID ) ) {
 			return false;
 		}
 
+		if ( $this->is_practice_case_sections_valid( $post ) ) {
+			return true;
+		}
+
+		return $this->is_block_content_valid( $post );
+	}
+
+	/**
+	 * Build TechArticle JSON-LD for a post (empty when invalid or disabled).
+	 *
+	 * @param \WP_Post $post Post object.
+	 * @return array<string, mixed>
+	 */
+	public function get_schema( \WP_Post $post ): array {
+		if ( ! $this->is_enabled_for_post( $post->ID ) ) {
+			return [];
+		}
+
+		return $this->build_schema( $post );
+	}
+
+	/**
+	 * @param \WP_Post $post Post object.
+	 * @return 'practice_case_sections'|'post_content_blocks'|''
+	 */
+	public function get_schema_source( \WP_Post $post ): string {
+		if ( ! $this->is_enabled_for_post( $post->ID ) ) {
+			return '';
+		}
+
+		if ( $this->is_practice_case_sections_valid( $post ) ) {
+			return 'practice_case_sections';
+		}
+
+		if ( $this->is_block_content_valid( $post ) ) {
+			return 'post_content_blocks';
+		}
+
+		return '';
+	}
+
+	private function is_block_content_valid( \WP_Post $post ): bool {
 		$blocks = parse_blocks( $post->post_content );
 		$flat   = $this->flatten_blocks( $blocks );
 
 		return $this->has_required_blocks( $flat );
+	}
+
+	private function is_practice_case_sections_valid( \WP_Post $post ): bool {
+		if ( ! $this->is_practice_case_post( $post ) ) {
+			return false;
+		}
+
+		$sections = $this->get_practice_case_sections( $post->ID );
+		if ( empty( $sections ) || ! is_array( $sections ) ) {
+			return false;
+		}
+
+		$software_code = $this->extract_software_code_from_sections( $sections );
+		$steps         = $this->extract_steps_from_sections( $sections );
+
+		return ! empty( $software_code ) && ! empty( $steps );
 	}
 
 	public function is_enabled_for_post( int $post_id ): bool {
@@ -103,6 +160,35 @@ final class TechArticle {
 	}
 
 	private function build_schema( \WP_Post $post ): array {
+		$schema = $this->build_schema_from_practice_case_sections( $post );
+		if ( ! empty( $schema ) ) {
+			return $schema;
+		}
+
+		return $this->build_schema_from_blocks( $post );
+	}
+
+	private function build_schema_from_practice_case_sections( \WP_Post $post ): array {
+		if ( ! $this->is_practice_case_post( $post ) ) {
+			return [];
+		}
+
+		$sections = $this->get_practice_case_sections( $post->ID );
+		if ( empty( $sections ) || ! is_array( $sections ) ) {
+			return [];
+		}
+
+		$software_code = $this->extract_software_code_from_sections( $sections );
+		$steps         = $this->extract_steps_from_sections( $sections );
+
+		if ( empty( $software_code ) || empty( $steps ) ) {
+			return [];
+		}
+
+		return $this->assemble_schema( $post, $software_code, $steps );
+	}
+
+	private function build_schema_from_blocks( \WP_Post $post ): array {
 		$blocks = parse_blocks( $post->post_content );
 		$flat   = $this->flatten_blocks( $blocks );
 
@@ -113,35 +199,176 @@ final class TechArticle {
 			return [];
 		}
 
-		$author = get_userdata( $post->post_author );
-		$schema = [
-			'@context' => 'https://schema.org',
-			'@type'    => 'TechArticle',
-			'headline' => get_the_title( $post->ID ),
-			'author'   => $author
-				? [
-					'@type' => 'Person',
-					'name'  => $author->display_name,
-				]
-				: null,
-			'softwareCode' => $software_code,
-			'hasPart'      => [
+		return $this->assemble_schema( $post, $software_code, $steps );
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $software_code Schema.org SoftwareSourceCode entries in hasPart.
+	 * @param array<int, array<string, mixed>> $steps         Schema.org HowToStep entries.
+	 * @return array<string, mixed>
+	 */
+	private function assemble_schema( \WP_Post $post, array $software_code, array $steps ): array {
+		$author     = get_userdata( $post->post_author );
+		$author_url = (string) get_post_meta( $post->ID, '_lms4wp_practice_author_url', true );
+		$image      = (string) get_post_meta( $post->ID, '_lms4wp_practice_image', true );
+
+		if ( '' === $image ) {
+			$image = (string) get_the_post_thumbnail_url( $post->ID, 'large' );
+		}
+
+		$author_data = null;
+		if ( $author ) {
+			$author_data = [ '@type' => 'Person', 'name' => $author->display_name ];
+			$url = '' !== $author_url ? $author_url : get_author_posts_url( $author->ID );
+			if ( '' !== $url ) {
+				$author_data['url'] = $url;
+			}
+		}
+
+		$has_part = array_merge(
+			$software_code,
+			[
 				[
 					'@type' => 'HowTo',
 					'step'  => $steps,
 				],
-			],
-			'about' => $this->build_about( $post ),
+			]
+		);
+
+		$schema = [
+			'@context'      => 'https://schema.org',
+			'@type'         => 'TechArticle',
+			'headline'      => get_the_title( $post->ID ),
+			'url'           => get_permalink( $post->ID ),
+			'datePublished' => get_the_date( 'c', $post->ID ),
+			'dateModified'  => get_the_modified_date( 'c', $post->ID ),
+			'author'        => $author_data,
+			'image'         => '' !== $image ? $image : null,
+			'hasPart'       => $has_part,
+			'about'         => $this->build_about( $post ),
 		];
 
-		if ( empty( $schema['author'] ) ) {
-			unset( $schema['author'] );
-		}
-		if ( empty( $schema['about'] ) ) {
-			unset( $schema['about'] );
+		foreach ( [ 'author', 'image', 'about' ] as $key ) {
+			if ( empty( $schema[ $key ] ) ) {
+				unset( $schema[ $key ] );
+			}
 		}
 
-		return $schema;
+		return apply_filters( 'forwp_seo_techarticle_schema', $schema, $post );
+	}
+
+	/**
+	 * @param array<string, mixed> $sections Practice case section meta.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_software_code_from_sections( array $sections ): array {
+		$output = [];
+		$steps  = $sections['steps'] ?? [];
+
+		if ( ! is_array( $steps ) ) {
+			return $output;
+		}
+
+		foreach ( $steps as $step ) {
+			if ( ! is_array( $step ) ) {
+				continue;
+			}
+
+			$command = isset( $step['command'] ) ? trim( (string) $step['command'] ) : '';
+			if ( '' === $command ) {
+				continue;
+			}
+
+			$output[] = [
+				'@type'               => 'SoftwareSourceCode',
+				'codeSampleType'      => 'full',
+				'programmingLanguage' => 'bash',
+				'text'                => $command,
+			];
+		}
+
+		return $output;
+	}
+
+	/**
+	 * @param array<string, mixed> $sections Practice case section meta.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_steps_from_sections( array $sections ): array {
+		$output = [];
+		$steps  = $sections['steps'] ?? [];
+
+		if ( ! is_array( $steps ) ) {
+			return $output;
+		}
+
+		foreach ( $steps as $step ) {
+			if ( ! is_array( $step ) ) {
+				continue;
+			}
+
+			$text = $this->format_practice_case_step_text( $step );
+			if ( '' === $text ) {
+				continue;
+			}
+
+			$output[] = [
+				'@type' => 'HowToStep',
+				'text'  => $text,
+			];
+		}
+
+		return $output;
+	}
+
+	/**
+	 * @param array<string, mixed> $step Practice case step row.
+	 */
+	private function format_practice_case_step_text( array $step ): string {
+		$parts = [];
+
+		if ( ! empty( $step['title'] ) && is_string( $step['title'] ) ) {
+			$parts[] = trim( wp_strip_all_tags( $step['title'] ) );
+		}
+
+		$paragraphs = $step['paragraphs'] ?? [];
+		if ( is_string( $paragraphs ) ) {
+			$paragraphs = [ $paragraphs ];
+		}
+
+		if ( is_array( $paragraphs ) ) {
+			foreach ( $paragraphs as $paragraph ) {
+				if ( ! is_string( $paragraph ) || trim( $paragraph ) === '' ) {
+					continue;
+				}
+				$parts[] = trim( wp_strip_all_tags( $paragraph ) );
+			}
+		}
+
+		return trim( implode( "\n", array_filter( $parts ) ) );
+	}
+
+	private function is_practice_case_post( \WP_Post $post ): bool {
+		if ( ! class_exists( '\ForWP\LMS\PostTypes\PracticeCase' ) ) {
+			return false;
+		}
+
+		return \ForWP\LMS\PostTypes\PracticeCase::POST_TYPE === $post->post_type;
+	}
+
+	/**
+	 * @return array<string, mixed>|null
+	 */
+	private function get_practice_case_sections( int $post_id ): ?array {
+		if ( class_exists( '\ForWP\LMS\Frontend\PracticeCaseRenderer' ) ) {
+			return \ForWP\LMS\Frontend\PracticeCaseRenderer::resolveSections( $post_id );
+		}
+
+		if ( class_exists( '\ForWP\LMS\Content\PracticeCaseContent' ) ) {
+			return \ForWP\LMS\Content\PracticeCaseContent::get( $post_id );
+		}
+
+		return null;
 	}
 
 	private function extract_software_code( array $blocks ): array {
