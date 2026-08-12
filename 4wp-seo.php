@@ -2,7 +2,7 @@
 /**
  * Plugin Name: 4wp SEO
  * Description: Internal SEO plugin with Schema.org, GSC, and LLMS.txt modules.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: 4wp.dev
  * Requires PHP: 8.0
  */
