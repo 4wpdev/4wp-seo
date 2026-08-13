@@ -190,7 +190,7 @@ final class InventoryRest {
 
 	public function list_items( WP_REST_Request $request ) {
 		if ( ! Module::get_instance()->is_enabled() ) {
-			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		$result = $this->repository->query( $this->request_to_query_args( $request ) );
@@ -203,7 +203,7 @@ final class InventoryRest {
 
 	public function get_stats( WP_REST_Request $request ) {
 		if ( ! Module::get_instance()->is_enabled() ) {
-			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		return [
@@ -219,7 +219,7 @@ final class InventoryRest {
 
 	public function export_items( WP_REST_Request $request ) {
 		if ( ! Module::get_instance()->is_enabled() ) {
-			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		$args   = $this->request_to_query_args( $request );
@@ -250,7 +250,7 @@ final class InventoryRest {
 		$record  = $this->repository->get_record( $post_id );
 
 		if ( null === $record ) {
-			return new \WP_Error( 'not_found', __( 'Record not found.', '4wp-seo' ), [ 'status' => 404 ] );
+			return new \WP_Error( 'not_found', __( 'Record not found.', '4wp-seo-helper' ), [ 'status' => 404 ] );
 		}
 
 		return [
@@ -303,7 +303,7 @@ final class InventoryRest {
 		$items  = is_array( $params['items'] ?? null ) ? $params['items'] : [];
 
 		if ( empty( $items ) ) {
-			return new \WP_Error( 'invalid_items', __( 'Items array is required.', '4wp-seo' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_items', __( 'Items array is required.', '4wp-seo-helper' ), [ 'status' => 400 ] );
 		}
 
 		$result = $this->bulk_updater->update( $items );
@@ -317,7 +317,7 @@ final class InventoryRest {
 
 	public function get_priority_queue() {
 		if ( ! Module::get_instance()->is_enabled() ) {
-			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		return [
@@ -328,14 +328,14 @@ final class InventoryRest {
 
 	public function update_priority_queue( WP_REST_Request $request ) {
 		if ( ! Module::get_instance()->is_enabled() ) {
-			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		$params = $request->get_json_params();
 		$lanes  = is_array( $params['lanes'] ?? null ) ? $params['lanes'] : null;
 
 		if ( null === $lanes ) {
-			return new \WP_Error( 'invalid_lanes', __( 'Lanes object is required.', '4wp-seo' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_lanes', __( 'Lanes object is required.', '4wp-seo-helper' ), [ 'status' => 400 ] );
 		}
 
 		$saved = $this->priority_queue->set_lanes( $lanes );
@@ -350,12 +350,12 @@ final class InventoryRest {
 
 	public function assign_priority( WP_REST_Request $request ) {
 		if ( ! Module::get_instance()->is_enabled() ) {
-			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		$post_id = (int) $request->get_param( 'post_id' );
 		if ( null === $this->repository->get_record( $post_id ) ) {
-			return new \WP_Error( 'not_found', __( 'Record not found.', '4wp-seo' ), [ 'status' => 404 ] );
+			return new \WP_Error( 'not_found', __( 'Record not found.', '4wp-seo-helper' ), [ 'status' => 404 ] );
 		}
 
 		$params   = $request->get_json_params();
@@ -366,7 +366,7 @@ final class InventoryRest {
 		} else {
 			$priority_value = (int) $priority;
 			if ( $priority_value < 1 || $priority_value > 3 ) {
-				return new \WP_Error( 'invalid_priority', __( 'Priority must be 1, 2, 3, or empty.', '4wp-seo' ), [ 'status' => 400 ] );
+				return new \WP_Error( 'invalid_priority', __( 'Priority must be 1, 2, 3, or empty.', '4wp-seo-helper' ), [ 'status' => 400 ] );
 			}
 		}
 

@@ -18,21 +18,23 @@ final class InventoryExport {
 
 	public static function handle(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', '4wp-seo' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', '4wp-seo-helper' ) );
 		}
 
 		check_admin_referer( 'forwp_seo_inventory_export' );
 
 		$repository = new Repository();
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Filter params echoed from inventory screen; export nonce verified above.
 		$args       = [
-			'page'      => 1,
+			'page'      => isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1,
 			'per_page'  => 200,
-			'post_type' => sanitize_key( (string) ( $_GET['post_type'] ?? '' ) ),
-			'lang'      => sanitize_key( (string) ( $_GET['lang'] ?? '' ) ),
-			'status'    => sanitize_key( (string) ( $_GET['status'] ?? 'publish' ) ),
-			'missing'   => sanitize_key( (string) ( $_GET['missing'] ?? '' ) ),
-			'search'    => sanitize_text_field( (string) ( $_GET['s'] ?? '' ) ),
+			'post_type' => sanitize_key( wp_unslash( (string) ( $_GET['post_type'] ?? '' ) ) ),
+			'lang'      => sanitize_key( wp_unslash( (string) ( $_GET['lang'] ?? '' ) ) ),
+			'status'    => sanitize_key( wp_unslash( (string) ( $_GET['status'] ?? 'publish' ) ) ),
+			'missing'   => sanitize_key( wp_unslash( (string) ( $_GET['missing'] ?? '' ) ) ),
+			'search'    => sanitize_text_field( wp_unslash( (string) ( $_GET['s'] ?? '' ) ) ),
 		];
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$all_items = [];
 		do {
@@ -73,6 +75,7 @@ final class InventoryExport {
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="seo-inventory.csv"' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSV cells escaped via csv_escape().
 		echo implode( "\n", $lines );
 		exit;
 	}

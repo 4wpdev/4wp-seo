@@ -75,38 +75,40 @@ final class InventoryListTable extends \WP_List_Table {
 		return [
 			'priority_p1'    => sprintf(
 				/* translators: %s: formatted priority tier label */
-				__( 'Set %s', '4wp-seo' ),
+				__( 'Set %s', '4wp-seo-helper' ),
 				PriorityLabels::get_formatted( 1 )
 			),
 			'priority_p2'    => sprintf(
-				__( 'Set %s', '4wp-seo' ),
+				/* translators: %s: formatted priority tier label */
+				__( 'Set %s', '4wp-seo-helper' ),
 				PriorityLabels::get_formatted( 2 )
 			),
 			'priority_p3'    => sprintf(
-				__( 'Set %s', '4wp-seo' ),
+				/* translators: %s: formatted priority tier label */
+				__( 'Set %s', '4wp-seo-helper' ),
 				PriorityLabels::get_formatted( 3 )
 			),
-			'priority_clear' => __( 'Clear priority', '4wp-seo' ),
+			'priority_clear' => __( 'Clear priority', '4wp-seo-helper' ),
 		];
 	}
 
 	public function get_columns(): array {
 		$columns = [
-			'post_id'          => __( 'ID', '4wp-seo' ),
-			'wp_title'         => __( 'Title', '4wp-seo' ),
-			'post_type'        => __( 'Type', '4wp-seo' ),
-			'seo_title'        => __( 'SEO title', '4wp-seo' ),
-			'meta_description' => __( 'Meta description', '4wp-seo' ),
-			'focus_keyword'    => __( 'Focus keyword', '4wp-seo' ),
-			'og_image'         => __( 'OG image', '4wp-seo' ),
-			'completeness'     => __( 'Score', '4wp-seo' ),
-			'missing'          => __( 'Missing', '4wp-seo' ),
+			'post_id'          => __( 'ID', '4wp-seo-helper' ),
+			'wp_title'         => __( 'Title', '4wp-seo-helper' ),
+			'post_type'        => __( 'Type', '4wp-seo-helper' ),
+			'seo_title'        => __( 'SEO title', '4wp-seo-helper' ),
+			'meta_description' => __( 'Meta description', '4wp-seo-helper' ),
+			'focus_keyword'    => __( 'Focus keyword', '4wp-seo-helper' ),
+			'og_image'         => __( 'OG image', '4wp-seo-helper' ),
+			'completeness'     => __( 'Score', '4wp-seo-helper' ),
+			'missing'          => __( 'Missing', '4wp-seo-helper' ),
 		];
 
 		if ( $this->show_language ) {
 			$columns = array_merge(
 				array_slice( $columns, 0, 2, true ),
-				[ 'lang' => __( 'Lang', '4wp-seo' ) ],
+				[ 'lang' => __( 'Lang', '4wp-seo-helper' ) ],
 				array_slice( $columns, 2, null, true )
 			);
 		}
@@ -269,7 +271,7 @@ final class InventoryListTable extends \WP_List_Table {
 		echo '<span class="forwp-seo-priority-group__label">' . esc_html( $label ) . '</span>';
 		echo '<span class="forwp-seo-priority-group__count">' . esc_html( (string) $count ) . '</span>';
 		if ( $priority >= 1 && $priority <= 3 ) {
-			echo '<span class="forwp-seo-priority-group__hint">' . esc_html__( 'Drop rows here', '4wp-seo' ) . '</span>';
+			echo '<span class="forwp-seo-priority-group__hint">' . esc_html__( 'Drop rows here', '4wp-seo-helper' ) . '</span>';
 		}
 		echo '</div>';
 		echo '<div class="forwp-seo-priority-group__stats">';
@@ -279,7 +281,7 @@ final class InventoryListTable extends \WP_List_Table {
 				esc_html(
 					sprintf(
 						/* translators: %d: average completeness percent */
-						__( 'Avg %d%%', '4wp-seo' ),
+						__( 'Avg %d%%', '4wp-seo-helper' ),
 						$stats['avg']
 					)
 				)
@@ -287,14 +289,15 @@ final class InventoryListTable extends \WP_List_Table {
 			echo '<span class="forwp-seo-priority-group__stat forwp-seo-priority-group__gaps"' . ( $stats['gaps'] > 0 ? '' : ' hidden' ) . '>';
 			printf(
 				esc_html(
+					/* translators: %d: number of items with SEO gaps */
 					_n(
 						'%d with gaps',
 						'%d with gaps',
 						$stats['gaps'],
-						'4wp-seo'
+						'4wp-seo-helper'
 					)
 				),
-				$stats['gaps']
+				absint( $stats['gaps'] )
 			);
 			echo '</span>';
 		}
@@ -337,7 +340,7 @@ final class InventoryListTable extends \WP_List_Table {
 	private function render_priority_group_empty( int $priority ): void {
 		echo '<tr class="forwp-seo-priority-group-empty" data-priority-group="' . esc_attr( (string) $priority ) . '" data-dropzone="1">';
 		echo '<td colspan="' . esc_attr( (string) $this->get_table_column_count() ) . '">';
-		echo esc_html__( 'No items — drop here', '4wp-seo' );
+		echo esc_html__( 'No items — drop here', '4wp-seo-helper' );
 		echo '</td>';
 		echo '</tr>';
 	}
@@ -354,7 +357,7 @@ final class InventoryListTable extends \WP_List_Table {
 			return $this->redirect_base;
 		}
 
-		return admin_url( 'admin.php?page=4wp-seo-inventory' );
+		return admin_url( 'admin.php?page=' . Menu::INVENTORY_PAGE_SLUG );
 	}
 
 	protected function process_bulk_action(): void {
@@ -411,7 +414,7 @@ final class InventoryListTable extends \WP_List_Table {
 		$url   = (string) $item['url'];
 		$priority = isset( $item['priority'] ) ? (int) $item['priority'] : 0;
 
-		$output = '<span class="forwp-seo-row-drag" aria-hidden="true" title="' . esc_attr__( 'Drag to reorder or change priority', '4wp-seo' ) . '">⠿</span> ';
+		$output = '<span class="forwp-seo-row-drag" aria-hidden="true" title="' . esc_attr__( 'Drag to reorder or change priority', '4wp-seo-helper' ) . '">⠿</span> ';
 
 		if ( $priority >= 1 && $priority <= 3 ) {
 			$output .= sprintf(
@@ -436,11 +439,11 @@ final class InventoryListTable extends \WP_List_Table {
 				esc_attr(
 					sprintf(
 						/* translators: %s: post title */
-						__( 'Quick edit “%s” inline', '4wp-seo' ),
+						__( 'Quick edit “%s” inline', '4wp-seo-helper' ),
 						$title
 					)
 				),
-				esc_html__( 'Quick Edit', '4wp-seo' )
+				esc_html__( 'Quick Edit', '4wp-seo-helper' )
 			),
 		];
 
@@ -449,7 +452,7 @@ final class InventoryListTable extends \WP_List_Table {
 			$actions['edit'] = sprintf(
 				'<a href="%s">%s</a>',
 				esc_url( $edit_link ),
-				esc_html__( 'Edit', '4wp-seo' )
+				esc_html__( 'Edit', '4wp-seo-helper' )
 			);
 		}
 
@@ -457,7 +460,7 @@ final class InventoryListTable extends \WP_List_Table {
 			$actions['view'] = sprintf(
 				'<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
 				esc_url( $url ),
-				esc_html__( 'View', '4wp-seo' )
+				esc_html__( 'View', '4wp-seo-helper' )
 			);
 		}
 
@@ -505,7 +508,7 @@ final class InventoryListTable extends \WP_List_Table {
 		$url = (string) ( $item['og_image'] ?? '' );
 
 		if ( '' === $url ) {
-			return '<span class="forwp-seo-og-thumb forwp-seo-og-thumb--empty" aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'No OG image', '4wp-seo' ) . '</span>';
+			return '<span class="forwp-seo-og-thumb forwp-seo-og-thumb--empty" aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'No OG image', '4wp-seo-helper' ) . '</span>';
 		}
 
 		return sprintf(
@@ -514,7 +517,7 @@ final class InventoryListTable extends \WP_List_Table {
 			'<span class="screen-reader-text">%2$s</span>' .
 			'</a>',
 			esc_url( $url ),
-			esc_html__( 'View OG image', '4wp-seo' )
+			esc_html__( 'View OG image', '4wp-seo-helper' )
 		);
 	}
 
@@ -544,7 +547,7 @@ final class InventoryListTable extends \WP_List_Table {
 			case 'focus_keyword':
 				$value = (string) ( $item[ $column_name ] ?? '' );
 				if ( '' === $value ) {
-					return '<span aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'Empty', '4wp-seo' ) . '</span>';
+					return '<span aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'Empty', '4wp-seo-helper' ) . '</span>';
 				}
 				return esc_html( wp_html_excerpt( $value, 80, '…' ) );
 
@@ -554,6 +557,6 @@ final class InventoryListTable extends \WP_List_Table {
 	}
 
 	public function no_items(): void {
-		esc_html_e( 'No posts found for the current filters.', '4wp-seo' );
+		esc_html_e( 'No posts found for the current filters.', '4wp-seo-helper' );
 	}
 }

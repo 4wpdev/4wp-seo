@@ -55,7 +55,7 @@ final class Rest {
 	public function handle_request( WP_REST_Request $request ) {
 		$module_enabled = get_option( Module::OPTION_ENABLED, '0' ) === '1';
 		if ( ! $module_enabled ) {
-			return new \WP_Error( 'crossposting_disabled', __( 'Cross posting is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+			return new \WP_Error( 'crossposting_disabled', __( 'Cross posting is disabled.', '4wp-seo-helper' ), [ 'status' => 403 ] );
 		}
 
 		$post_id  = (int) $request->get_param( 'post_id' );
@@ -63,14 +63,14 @@ final class Rest {
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			return new \WP_Error( 'not_found', __( 'Post not found.', '4wp-seo' ), [ 'status' => 404 ] );
+			return new \WP_Error( 'not_found', __( 'Post not found.', '4wp-seo-helper' ), [ 'status' => 404 ] );
 		}
 
 		$formatter = new Formatter();
 		$content   = $formatter->format( $platform, $post );
 
 		if ( '' === $content ) {
-			return new \WP_Error( 'invalid_platform', __( 'Unsupported platform.', '4wp-seo' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_platform', __( 'Unsupported platform.', '4wp-seo-helper' ), [ 'status' => 400 ] );
 		}
 
 		return [

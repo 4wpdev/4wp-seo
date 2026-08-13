@@ -29,7 +29,9 @@ final class Cors {
 			return $served;
 		}
 
-		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? (string) $_SERVER['HTTP_ORIGIN'] : '';
+		$origin = isset( $_SERVER['HTTP_ORIGIN'] )
+			? sanitize_text_field( wp_unslash( (string) $_SERVER['HTTP_ORIGIN'] ) )
+			: '';
 		if ( '' === $origin || ! in_array( $origin, $origins, true ) ) {
 			return $served;
 		}

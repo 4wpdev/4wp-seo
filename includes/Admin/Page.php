@@ -69,22 +69,22 @@ final class Page {
 				<span class="forwp-seo-admin-heading__icon" aria-hidden="true">
 					<?php echo wp_kses( $heading_svg, self::svg_allowed_html() ); ?>
 				</span>
-				<span class="forwp-seo-admin-heading__text"><?php esc_html_e( '4WP SEO Helper', '4wp-seo' ); ?></span>
+				<span class="forwp-seo-admin-heading__text"><?php esc_html_e( '4WP SEO Helper', '4wp-seo-helper' ); ?></span>
 			</h1>
 			<p class="forwp-seo-admin-lead">
-				<?php esc_html_e( 'SEO Inventory for WordPress — audit titles, meta descriptions, and SEO completeness across your site. More modules are on the roadmap.', '4wp-seo' ); ?>
+				<?php esc_html_e( 'SEO Inventory for WordPress — audit titles, meta descriptions, and SEO completeness across your site. More modules are on the roadmap.', '4wp-seo-helper' ); ?>
 			</p>
 
 			<div class="forwp-seo-admin-app">
 				<div class="forwp-seo-tab-panel components-tab-panel">
-					<div class="components-tab-panel__tabs" role="tablist" aria-label="<?php esc_attr_e( '4WP SEO Helper', '4wp-seo' ); ?>">
-						<?php self::render_tab_button( self::TAB_OVERVIEW, __( 'Overview', '4wp-seo' ), $tab ); ?>
-						<?php self::render_tab_button( self::TAB_SETTINGS, __( 'Settings', '4wp-seo' ), $tab ); ?>
+					<div class="components-tab-panel__tabs" role="tablist" aria-label="<?php esc_attr_e( '4WP SEO Helper', '4wp-seo-helper' ); ?>">
+						<?php self::render_tab_button( self::TAB_OVERVIEW, __( 'Overview', '4wp-seo-helper' ), $tab ); ?>
+						<?php self::render_tab_button( self::TAB_SETTINGS, __( 'Settings', '4wp-seo-helper' ), $tab ); ?>
 						<?php if ( Release::is_module_public( Release::MODULE_INVENTORY_API ) ) : ?>
-							<?php self::render_tab_button( self::TAB_API, __( 'Inventory API', '4wp-seo' ), $tab ); ?>
+							<?php self::render_tab_button( self::TAB_API, __( 'Inventory API', '4wp-seo-helper' ), $tab ); ?>
 						<?php endif; ?>
 						<?php if ( Release::is_module_public( Release::MODULE_GSC ) ) : ?>
-							<?php self::render_tab_button( self::TAB_GSC, __( 'Search Console', '4wp-seo' ), $tab ); ?>
+							<?php self::render_tab_button( self::TAB_GSC, __( 'Search Console', '4wp-seo-helper' ), $tab ); ?>
 						<?php endif; ?>
 					</div>
 
@@ -123,7 +123,7 @@ final class Page {
 	}
 
 	private static function get_active_tab(): string {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation and OAuth PRG flags.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : self::TAB_OVERVIEW;
 
 		if ( ! in_array( $tab, self::get_tabs(), true ) ) {
@@ -133,6 +133,7 @@ final class Page {
 		if ( Release::is_module_public( Release::MODULE_GSC ) && ( ! empty( $_GET['gsc_connected'] ) || ! empty( $_GET['gsc_error'] ) ) ) {
 			return self::TAB_GSC;
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		return $tab;
 	}
@@ -162,84 +163,84 @@ final class Page {
 	): void {
 		?>
 		<div class="forwp-seo-intro-card">
-			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'What this plugin does', '4wp-seo' ); ?></h2>
+			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'What this plugin does', '4wp-seo-helper' ); ?></h2>
 			<p class="forwp-seo-intro-card__text">
-				<?php esc_html_e( '4WP SEO Helper gives you a site-wide SEO Inventory: see missing titles and meta fields, set business priorities (P1–P3), and export or sync via REST. Built for Yoast SEO and All in One SEO.', '4wp-seo' ); ?>
+				<?php esc_html_e( '4WP SEO Helper gives you a site-wide SEO Inventory: see missing titles and meta fields, set business priorities (P1–P3), and export or sync via REST. Built for Yoast SEO and All in One SEO.', '4wp-seo-helper' ); ?>
 			</p>
 			<?php if ( $inventory_enabled ) : ?>
 				<div class="forwp-seo-intro-card__actions">
-					<a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=4wp-seo-inventory' ) ); ?>">
-						<?php esc_html_e( 'Open SEO Inventory', '4wp-seo' ); ?>
+					<a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::INVENTORY_PAGE_SLUG ) ); ?>">
+						<?php esc_html_e( 'Open SEO Inventory', '4wp-seo-helper' ); ?>
 					</a>
-					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=4wp-seo-inventory&missing=any' ) ); ?>">
-						<?php esc_html_e( 'Show missing fields', '4wp-seo' ); ?>
+					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::INVENTORY_PAGE_SLUG . '&missing=any' ) ); ?>">
+						<?php esc_html_e( 'Show missing fields', '4wp-seo-helper' ); ?>
 					</a>
 				</div>
 			<?php endif; ?>
 		</div>
 
-		<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Module status', '4wp-seo' ); ?></h2>
+		<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Module status', '4wp-seo-helper' ); ?></h2>
 		<div class="forwp-seo-status-grid">
 			<?php
 			self::render_status_card(
-				__( 'SEO inventory', '4wp-seo' ),
+				__( 'SEO inventory', '4wp-seo-helper' ),
 				$inventory_enabled
-					? __( 'Admin table + REST API for bulk SEO ops.', '4wp-seo' )
-					: __( 'Disabled — enable in Settings.', '4wp-seo' ),
+					? __( 'Admin table + REST API for bulk SEO ops.', '4wp-seo-helper' )
+					: __( 'Disabled — enable in Settings.', '4wp-seo-helper' ),
 				$inventory_enabled ? 'live' : 'off',
 				$inventory_enabled && is_array( $inventory_stats )
 					? sprintf(
 						/* translators: 1: post count, 2: average completeness percent */
-						__( '%1$d posts · %2$d%% avg completeness', '4wp-seo' ),
+						__( '%1$d posts · %2$d%% avg completeness', '4wp-seo-helper' ),
 						(int) $inventory_stats['posts'],
 						(int) $inventory_stats['avg_completeness']
 					)
-					: ( $inventory_enabled ? __( 'API enabled', '4wp-seo' ) : __( 'Off', '4wp-seo' ) )
+					: ( $inventory_enabled ? __( 'API enabled', '4wp-seo-helper' ) : __( 'Off', '4wp-seo-helper' ) )
 			);
 			self::render_status_card(
-				__( 'Integrations', '4wp-seo' ),
+				__( 'Integrations', '4wp-seo-helper' ),
 				sprintf(
 					/* translators: 1: SEO adapter label, 2: multilingual provider label */
-					__( 'SEO: %1$s · Multilingual: %2$s', '4wp-seo' ),
+					__( 'SEO: %1$s · Multilingual: %2$s', '4wp-seo-helper' ),
 					$seo_adapter->get_label(),
 					$multilingual->get_label()
 				),
 				'none' !== $seo_adapter->get_id() ? 'live' : 'warn',
 				'none' !== $seo_adapter->get_id()
-					? __( 'Adapter active', '4wp-seo' )
-					: __( 'No SEO plugin detected', '4wp-seo' )
+					? __( 'Adapter active', '4wp-seo-helper' )
+					: __( 'No SEO plugin detected', '4wp-seo-helper' )
 			);
 			self::render_status_card(
-				__( 'TechArticle schema', '4wp-seo' ),
-				__( 'JSON-LD and Gutenberg blocks for technical articles.', '4wp-seo' ),
+				__( 'TechArticle schema', '4wp-seo-helper' ),
+				__( 'JSON-LD and Gutenberg blocks for technical articles.', '4wp-seo-helper' ),
 				Release::is_module_public( Release::MODULE_TECHARTICLE ) ? 'live' : 'soon',
 				Release::is_module_public( Release::MODULE_TECHARTICLE )
-					? __( 'Active in editor & frontend', '4wp-seo' )
-					: __( 'Planned for a future release', '4wp-seo' )
+					? __( 'Active in editor & frontend', '4wp-seo-helper' )
+					: __( 'Planned for a future release', '4wp-seo-helper' )
 			);
 			self::render_status_card(
-				__( 'Google Search Console', '4wp-seo' ),
-				__( 'OAuth, property picker, URL inspection, analytics.', '4wp-seo' ),
+				__( 'Google Search Console', '4wp-seo-helper' ),
+				__( 'OAuth, property picker, URL inspection, analytics.', '4wp-seo-helper' ),
 				Release::is_module_public( Release::MODULE_GSC ) ? ( $is_connected ? 'live' : 'warn' ) : 'soon',
 				Release::is_module_public( Release::MODULE_GSC )
-					? ( $is_connected ? __( 'Connected', '4wp-seo' ) : __( 'Not connected', '4wp-seo' ) )
-					: __( 'Planned for a future release', '4wp-seo' )
+					? ( $is_connected ? __( 'Connected', '4wp-seo-helper' ) : __( 'Not connected', '4wp-seo-helper' ) )
+					: __( 'Planned for a future release', '4wp-seo-helper' )
 			);
 			self::render_status_card(
-				__( 'LLMS.txt', '4wp-seo' ),
-				__( 'Machine-readable site index for AI crawlers.', '4wp-seo' ),
+				__( 'LLMS.txt', '4wp-seo-helper' ),
+				__( 'Machine-readable site index for AI crawlers.', '4wp-seo-helper' ),
 				Release::is_module_public( Release::MODULE_LLMS ) ? 'live' : 'soon',
 				Release::is_module_public( Release::MODULE_LLMS )
 					? (string) home_url( '/llms.txt' )
-					: __( 'Planned for a future release', '4wp-seo' )
+					: __( 'Planned for a future release', '4wp-seo-helper' )
 			);
 			self::render_status_card(
-				__( 'Cross posting', '4wp-seo' ),
-				__( 'Editor tools for social / syndication drafts.', '4wp-seo' ),
+				__( 'Cross posting', '4wp-seo-helper' ),
+				__( 'Editor tools for social / syndication drafts.', '4wp-seo-helper' ),
 				Release::is_module_public( Release::MODULE_CROSSPOSTING ) ? ( $crossposting_enabled ? 'live' : 'off' ) : 'soon',
 				Release::is_module_public( Release::MODULE_CROSSPOSTING )
-					? ( $crossposting_enabled ? __( 'Enabled', '4wp-seo' ) : __( 'Disabled', '4wp-seo' ) )
-					: __( 'Planned for a future release', '4wp-seo' )
+					? ( $crossposting_enabled ? __( 'Enabled', '4wp-seo-helper' ) : __( 'Disabled', '4wp-seo-helper' ) )
+					: __( 'Planned for a future release', '4wp-seo-helper' )
 			);
 			?>
 		</div>
@@ -248,17 +249,17 @@ final class Page {
 
 	private static function render_status_card( string $title, string $desc, string $badge, string $meta ): void {
 		$badge_class = 'forwp-seo-badge--off';
-		$badge_label = __( 'Off', '4wp-seo' );
+		$badge_label = __( 'Off', '4wp-seo-helper' );
 
 		if ( 'live' === $badge ) {
 			$badge_class = 'forwp-seo-badge--live';
-			$badge_label = __( 'Active', '4wp-seo' );
+			$badge_label = __( 'Active', '4wp-seo-helper' );
 		} elseif ( 'soon' === $badge ) {
 			$badge_class = 'forwp-seo-badge--soon';
-			$badge_label = __( 'Coming soon', '4wp-seo' );
+			$badge_label = __( 'Coming soon', '4wp-seo-helper' );
 		} elseif ( 'warn' === $badge ) {
 			$badge_class = 'forwp-seo-badge--warn';
-			$badge_label = __( 'Setup', '4wp-seo' );
+			$badge_label = __( 'Setup', '4wp-seo-helper' );
 		}
 
 		?>
@@ -277,9 +278,9 @@ final class Page {
 		$priority_labels = PriorityLabels::get_all();
 		?>
 		<div class="forwp-seo-intro-card">
-			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'SEO Inventory settings', '4wp-seo' ); ?></h2>
+			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'SEO Inventory settings', '4wp-seo-helper' ); ?></h2>
 			<p class="forwp-seo-intro-card__text">
-				<?php esc_html_e( 'Configure the inventory API and priority tier names used in the admin table.', '4wp-seo' ); ?>
+				<?php esc_html_e( 'Configure the inventory API and priority tier names used in the admin table.', '4wp-seo-helper' ); ?>
 			</p>
 		</div>
 
@@ -290,15 +291,15 @@ final class Page {
 				<label class="forwp-seo-toggle-row">
 					<input type="checkbox" name="forwp_seo_inventory_enabled" value="1" <?php checked( $inventory_enabled ); ?> />
 					<span>
-						<strong><?php esc_html_e( 'SEO inventory API', '4wp-seo' ); ?></strong><br />
-						<span class="forwp-seo-admin-muted"><?php esc_html_e( 'Enable REST endpoints for the admin inventory, analytics dashboard, and Google Sheets sync.', '4wp-seo' ); ?></span>
+						<strong><?php esc_html_e( 'SEO inventory API', '4wp-seo-helper' ); ?></strong><br />
+						<span class="forwp-seo-admin-muted"><?php esc_html_e( 'Enable REST endpoints for the admin inventory, analytics dashboard, and Google Sheets sync.', '4wp-seo-helper' ); ?></span>
 					</span>
 				</label>
 				<?php endif; ?>
 
-				<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Inventory priority tiers', '4wp-seo' ); ?></h2>
+				<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Inventory priority tiers', '4wp-seo-helper' ); ?></h2>
 				<p class="forwp-seo-admin-muted">
-					<?php esc_html_e( 'Name the three priority lanes used in SEO Inventory. Priority reflects business importance (e.g. main service pages), not SEO score — a page can stay in P1 even at 100%. Search Console signals such as clicks or indexing may feed into ranking later.', '4wp-seo' ); ?>
+					<?php esc_html_e( 'Name the three priority lanes used in SEO Inventory. Priority reflects business importance (e.g. main service pages), not SEO score — a page can stay in P1 even at 100%. Search Console signals such as clicks or indexing may feed into ranking later.', '4wp-seo-helper' ); ?>
 				</p>
 				<div class="forwp-seo-priority-labels">
 					<?php foreach ( PriorityLabels::get_defaults() as $lane_id => $default_label ) : ?>
@@ -316,7 +317,7 @@ final class Page {
 				</div>
 
 				<div class="forwp-seo-form-actions">
-					<?php submit_button( __( 'Save settings', '4wp-seo' ), 'primary', 'submit', false ); ?>
+					<?php submit_button( __( 'Save settings', '4wp-seo-helper' ), 'primary', 'submit', false ); ?>
 				</div>
 			</form>
 		</div>
@@ -327,10 +328,10 @@ final class Page {
 
 	private static function render_coming_soon_modules_panel(): void {
 		$modules = [
-			Release::MODULE_TECHARTICLE  => __( 'TechArticle schema & blocks', '4wp-seo' ),
-			Release::MODULE_GSC          => __( 'Google Search Console', '4wp-seo' ),
-			Release::MODULE_LLMS         => __( 'LLMS.txt', '4wp-seo' ),
-			Release::MODULE_CROSSPOSTING => __( 'Cross posting', '4wp-seo' ),
+			Release::MODULE_TECHARTICLE  => __( 'TechArticle schema & blocks', '4wp-seo-helper' ),
+			Release::MODULE_GSC          => __( 'Google Search Console', '4wp-seo-helper' ),
+			Release::MODULE_LLMS         => __( 'LLMS.txt', '4wp-seo-helper' ),
+			Release::MODULE_CROSSPOSTING => __( 'Cross posting', '4wp-seo-helper' ),
 		];
 
 		$upcoming = array_filter(
@@ -347,14 +348,14 @@ final class Page {
 		}
 		?>
 		<div class="forwp-seo-panel forwp-seo-panel--soon">
-			<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Coming soon', '4wp-seo' ); ?></h2>
+			<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Coming soon', '4wp-seo-helper' ); ?></h2>
 			<p class="forwp-seo-admin-muted">
-				<?php esc_html_e( 'These modules are already in the codebase and will ship in upcoming releases.', '4wp-seo' ); ?>
+				<?php esc_html_e( 'These modules are already in the codebase and will ship in upcoming releases.', '4wp-seo-helper' ); ?>
 			</p>
 			<ul class="forwp-seo-soon-list">
 				<?php foreach ( $upcoming as $label ) : ?>
 					<li>
-						<span class="forwp-seo-badge forwp-seo-badge--soon"><?php esc_html_e( 'Coming soon', '4wp-seo' ); ?></span>
+						<span class="forwp-seo-badge forwp-seo-badge--soon"><?php esc_html_e( 'Coming soon', '4wp-seo-helper' ); ?></span>
 						<?php echo esc_html( $label ); ?>
 					</li>
 				<?php endforeach; ?>
@@ -372,47 +373,47 @@ final class Page {
 		}
 		?>
 		<div class="forwp-seo-intro-card">
-			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'REST sync for external tools', '4wp-seo' ); ?></h2>
+			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'REST sync for external tools', '4wp-seo-helper' ); ?></h2>
 			<p class="forwp-seo-intro-card__text">
-				<?php esc_html_e( 'Use these endpoints from 4wp-analytics-dashboard or Google Apps Script. Sample script: docs/google-sheets-sync.gs in the plugin folder.', '4wp-seo' ); ?>
+				<?php esc_html_e( 'Use these endpoints from 4wp-analytics-dashboard or Google Apps Script. Sample script: docs/google-sheets-sync.gs in the plugin folder.', '4wp-seo-helper' ); ?>
 			</p>
 		</div>
 
 		<div class="forwp-seo-panel">
-			<h2><?php esc_html_e( 'Connection details', '4wp-seo' ); ?></h2>
+			<h2><?php esc_html_e( 'Connection details', '4wp-seo-helper' ); ?></h2>
 			<table class="forwp-seo-ref-table" role="presentation">
 				<tbody>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Status', '4wp-seo' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Status', '4wp-seo-helper' ); ?></th>
 						<td>
 							<span class="forwp-seo-badge <?php echo $inventory_enabled ? 'forwp-seo-badge--live' : 'forwp-seo-badge--off'; ?>">
-								<?php echo esc_html( $inventory_enabled ? __( 'Enabled', '4wp-seo' ) : __( 'Disabled', '4wp-seo' ) ); ?>
+								<?php echo esc_html( $inventory_enabled ? __( 'Enabled', '4wp-seo-helper' ) : __( 'Disabled', '4wp-seo-helper' ) ); ?>
 							</span>
 							<?php if ( ! $inventory_enabled ) : ?>
-								<p class="forwp-seo-admin-muted"><?php esc_html_e( 'Enable the inventory API in Settings to accept requests.', '4wp-seo' ); ?></p>
+								<p class="forwp-seo-admin-muted"><?php esc_html_e( 'Enable the inventory API in Settings to accept requests.', '4wp-seo-helper' ); ?></p>
 							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Base URL', '4wp-seo' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Base URL', '4wp-seo-helper' ); ?></th>
 						<td><code class="forwp-seo-code"><?php echo esc_html( $base_url ); ?></code></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'API contract', '4wp-seo' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'API contract', '4wp-seo-helper' ); ?></th>
 						<td><code class="forwp-seo-code"><?php echo esc_html( rest_url( 'forwp-seo-helper/v1/seo-inventory/meta' ) ); ?></code></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Auth header', '4wp-seo' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Auth header', '4wp-seo-helper' ); ?></th>
 						<td><code class="forwp-seo-code">Authorization: Bearer &lt;token&gt;</code></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Sync token', '4wp-seo' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Sync token', '4wp-seo-helper' ); ?></th>
 						<td>
 							<code class="forwp-seo-code"><?php echo esc_html( $token ); ?></code>
 							<form method="post" class="forwp-seo-inline-actions">
 								<?php wp_nonce_field( 'forwp_seo_settings', 'forwp_seo_settings_nonce' ); ?>
 								<input type="hidden" name="forwp_seo_regenerate_inventory_token" value="1" />
-								<?php submit_button( __( 'Regenerate token', '4wp-seo' ), 'secondary', 'submit', false ); ?>
+								<?php submit_button( __( 'Regenerate token', '4wp-seo-helper' ), 'secondary', 'submit', false ); ?>
 							</form>
 						</td>
 					</tr>
@@ -466,7 +467,7 @@ final class Page {
 			wp_safe_redirect(
 				add_query_arg(
 					[
-						'page'  => '4wp-seo',
+						'page'  => Menu::PAGE_SLUG,
 						'tab'   => $tab,
 						'saved' => $saved,
 					],
@@ -478,13 +479,13 @@ final class Page {
 	}
 
 	private static function render_notices(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only success flag after PRG redirect.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only PRG success and OAuth redirect flags.
 		if ( isset( $_GET['saved'] ) ) {
 			$saved = sanitize_key( wp_unslash( $_GET['saved'] ) );
 			if ( 'token' === $saved ) {
-				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Sync token regenerated.', '4wp-seo' ) . '</p></div>';
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Sync token regenerated.', '4wp-seo-helper' ) . '</p></div>';
 			} elseif ( 'settings' === $saved ) {
-				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', '4wp-seo' ) . '</p></div>';
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', '4wp-seo-helper' ) . '</p></div>';
 			}
 		}
 
@@ -492,8 +493,9 @@ final class Page {
 			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['gsc_error'] ) ) ) . '</p></div>';
 		}
 		if ( ! empty( $_GET['gsc_connected'] ) && Release::is_module_public( Release::MODULE_GSC ) ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Google Search Console connected.', '4wp-seo' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Google Search Console connected.', '4wp-seo-helper' ) . '</p></div>';
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	}
 
 	/**

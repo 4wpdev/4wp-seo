@@ -15,7 +15,7 @@ final class SingleSiteProvider implements ProviderInterface {
 	}
 
 	public function get_label(): string {
-		return __( 'Single language', '4wp-seo' );
+		return __( 'Single language', '4wp-seo-helper' );
 	}
 
 	public function is_available(): bool {

@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Menu {
+	public const PAGE_SLUG                 = 'forwp-seo';
+	public const INVENTORY_PAGE_SLUG       = 'forwp-seo-inventory';
 	public const INVENTORY_PER_PAGE_OPTION = 'forwp_seo_inventory_per_page';
 
 	private static $instance = null;
@@ -28,7 +30,7 @@ final class Menu {
 	private function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
-		add_action( 'load-4wp-seo_page_4wp-seo-inventory', [ $this, 'inventory_screen_options' ] );
+		add_action( 'load-' . self::PAGE_SLUG . '_page_' . self::INVENTORY_PAGE_SLUG, [ $this, 'inventory_screen_options' ] );
 		add_filter(
 			'set_screen_option_' . self::INVENTORY_PER_PAGE_OPTION,
 			static function ( $screen_option, $option, $value ) {
@@ -42,27 +44,27 @@ final class Menu {
 
 	public function register_menu(): void {
 		add_menu_page(
-			__( '4WP SEO Helper', '4wp-seo' ),
-			__( '4WP SEO', '4wp-seo' ),
+			__( '4WP SEO Helper', '4wp-seo-helper' ),
+			__( '4WP SEO', '4wp-seo-helper' ),
 			'manage_options',
-			'4wp-seo',
+			self::PAGE_SLUG,
 			[ Page::class, 'render' ],
 			'dashicons-chart-line',
 			30
 		);
 
 		add_submenu_page(
-			'4wp-seo',
-			__( 'SEO Inventory', '4wp-seo' ),
-			__( 'SEO Inventory', '4wp-seo' ),
+			self::PAGE_SLUG,
+			__( 'SEO Inventory', '4wp-seo-helper' ),
+			__( 'SEO Inventory', '4wp-seo-helper' ),
 			'manage_options',
-			'4wp-seo-inventory',
+			self::INVENTORY_PAGE_SLUG,
 			[ InventoryPage::class, 'render' ]
 		);
 	}
 
 	public function enqueue_admin_assets( string $hook_suffix ): void {
-		if ( 'toplevel_page_4wp-seo' !== $hook_suffix ) {
+		if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook_suffix ) {
 			return;
 		}
 
@@ -87,7 +89,7 @@ final class Menu {
 		add_screen_option(
 			'per_page',
 			[
-				'label'   => __( 'Inventory items per page', '4wp-seo' ),
+				'label'   => __( 'Inventory items per page', '4wp-seo-helper' ),
 				'default' => 20,
 				'option'  => self::INVENTORY_PER_PAGE_OPTION,
 			]
@@ -111,7 +113,8 @@ final class Menu {
 			FORWP_SEO_HELPER_VERSION
 		);
 
-		$view = sanitize_key( (string) ( $_GET['view'] ?? 'inventory' ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin view for script localization.
+		$view = sanitize_key( wp_unslash( (string) ( $_GET['view'] ?? 'inventory' ) ) );
 
 		wp_enqueue_script(
 			'forwp-seo-inventory-priority',
@@ -129,16 +132,18 @@ final class Menu {
 				'restUrl' => rest_url( 'forwp-seo-helper/v1/seo-inventory/priority-queue' ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'i18n'    => [
-					'saving'     => __( 'Saving…', '4wp-seo' ),
-					'saved'      => __( 'Priority saved.', '4wp-seo' ),
-					'error'      => __( 'Could not save priority.', '4wp-seo' ),
-					'emptyGroup' => __( 'No items — drop here', '4wp-seo' ),
-					'emptyLane'  => __( 'Empty', '4wp-seo' ),
-					'oneItem'    => __( '1 item', '4wp-seo' ),
-					'items'      => __( 'items', '4wp-seo' ),
-					'more'       => __( 'more', '4wp-seo' ),
-					'avgScore'   => __( 'Avg %d%%', '4wp-seo' ),
-					'withGaps'   => __( '%d with gaps', '4wp-seo' ),
+					'saving'     => __( 'Saving…', '4wp-seo-helper' ),
+					'saved'      => __( 'Priority saved.', '4wp-seo-helper' ),
+					'error'      => __( 'Could not save priority.', '4wp-seo-helper' ),
+					'emptyGroup' => __( 'No items — drop here', '4wp-seo-helper' ),
+					'emptyLane'  => __( 'Empty', '4wp-seo-helper' ),
+					'oneItem'    => __( '1 item', '4wp-seo-helper' ),
+					'items'      => __( 'items', '4wp-seo-helper' ),
+					'more'       => __( 'more', '4wp-seo-helper' ),
+					/* translators: %d: average completeness percent */
+					'avgScore'   => __( 'Avg %d%%', '4wp-seo-helper' ),
+					/* translators: %d: number of items with SEO gaps */
+					'withGaps'   => __( '%d with gaps', '4wp-seo-helper' ),
 				],
 				'priorityLabels' => [
 					'1' => PriorityLabels::get_formatted( 1 ),
@@ -172,22 +177,22 @@ final class Menu {
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'colspan' => max( 1, $colspan ),
 				'i18n'    => [
-					'quickEdit'    => __( 'Quick Edit', '4wp-seo' ),
-					'save'         => __( 'Update', '4wp-seo' ),
-					'cancel'       => __( 'Cancel', '4wp-seo' ),
-					'saving'       => __( 'Saving…', '4wp-seo' ),
-					'error'        => __( 'Could not save changes.', '4wp-seo' ),
-					'empty'        => __( 'Empty', '4wp-seo' ),
-					'seoTitle'     => __( 'SEO title', '4wp-seo' ),
-					'metaDesc'     => __( 'Meta description', '4wp-seo' ),
-					'focusKw'      => __( 'Focus keyword', '4wp-seo' ),
-					'ogImage'      => __( 'OG image', '4wp-seo' ),
-					'selectOgImage'=> __( 'Select image', '4wp-seo' ),
-					'useImage'     => __( 'Use image', '4wp-seo' ),
-					'removeImage'  => __( 'Remove image', '4wp-seo' ),
-					'noImage'      => __( 'No image selected', '4wp-seo' ),
-					'noOgImage'    => __( 'No OG image', '4wp-seo' ),
-					'viewOgImage'  => __( 'View OG image', '4wp-seo' ),
+					'quickEdit'    => __( 'Quick Edit', '4wp-seo-helper' ),
+					'save'         => __( 'Update', '4wp-seo-helper' ),
+					'cancel'       => __( 'Cancel', '4wp-seo-helper' ),
+					'saving'       => __( 'Saving…', '4wp-seo-helper' ),
+					'error'        => __( 'Could not save changes.', '4wp-seo-helper' ),
+					'empty'        => __( 'Empty', '4wp-seo-helper' ),
+					'seoTitle'     => __( 'SEO title', '4wp-seo-helper' ),
+					'metaDesc'     => __( 'Meta description', '4wp-seo-helper' ),
+					'focusKw'      => __( 'Focus keyword', '4wp-seo-helper' ),
+					'ogImage'      => __( 'OG image', '4wp-seo-helper' ),
+					'selectOgImage'=> __( 'Select image', '4wp-seo-helper' ),
+					'useImage'     => __( 'Use image', '4wp-seo-helper' ),
+					'removeImage'  => __( 'Remove image', '4wp-seo-helper' ),
+					'noImage'      => __( 'No image selected', '4wp-seo-helper' ),
+					'noOgImage'    => __( 'No OG image', '4wp-seo-helper' ),
+					'viewOgImage'  => __( 'View OG image', '4wp-seo-helper' ),
 				],
 			]
 		);

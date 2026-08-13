@@ -57,7 +57,7 @@ final class TechArticleRest {
 		$post    = get_post( $post_id );
 
 		if ( ! $post instanceof \WP_Post ) {
-			return new \WP_Error( 'not_found', __( 'Post not found.', '4wp-seo' ), [ 'status' => 404 ] );
+			return new \WP_Error( 'not_found', __( 'Post not found.', '4wp-seo-helper' ), [ 'status' => 404 ] );
 		}
 
 		$tech    = TechArticle::get_instance();

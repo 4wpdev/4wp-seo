@@ -5,6 +5,8 @@
 
 namespace Forwp\SeoHelper\Gsc;
 
+use Forwp\SeoHelper\Admin\Menu;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -44,57 +46,57 @@ final class Admin {
 
 		?>
 		<div class="forwp-seo-intro-card">
-			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'Google Search Console', '4wp-seo' ); ?></h2>
+			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'Google Search Console', '4wp-seo-helper' ); ?></h2>
 			<p class="forwp-seo-intro-card__text">
-				<?php esc_html_e( 'Connect OAuth credentials, pick a property, then inspect URLs or load 28-day search metrics.', '4wp-seo' ); ?>
+				<?php esc_html_e( 'Connect OAuth credentials, pick a property, then inspect URLs or load 28-day search metrics.', '4wp-seo-helper' ); ?>
 			</p>
 		</div>
 
 		<div class="forwp-seo-row-two">
 			<div class="forwp-seo-panel forwp-seo-panel--nested">
-				<h2><?php esc_html_e( 'API credentials', '4wp-seo' ); ?></h2>
+				<h2><?php esc_html_e( 'API credentials', '4wp-seo-helper' ); ?></h2>
 				<form method="post">
 					<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
 					<table class="form-table" role="presentation">
 						<tr>
-							<th scope="row"><label for="forwp_seo_gsc_client_id"><?php esc_html_e( 'Client ID', '4wp-seo' ); ?></label></th>
+							<th scope="row"><label for="forwp_seo_gsc_client_id"><?php esc_html_e( 'Client ID', '4wp-seo-helper' ); ?></label></th>
 							<td><input type="text" class="large-text code" name="forwp_seo_gsc_client_id" id="forwp_seo_gsc_client_id" value="<?php echo esc_attr( $client_id ); ?>" autocomplete="off" /></td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="forwp_seo_gsc_client_secret"><?php esc_html_e( 'Client Secret', '4wp-seo' ); ?></label></th>
+							<th scope="row"><label for="forwp_seo_gsc_client_secret"><?php esc_html_e( 'Client Secret', '4wp-seo-helper' ); ?></label></th>
 							<td><input type="password" class="large-text code" name="forwp_seo_gsc_client_secret" id="forwp_seo_gsc_client_secret" value="<?php echo esc_attr( $client_secret ); ?>" autocomplete="new-password" /></td>
 						</tr>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Redirect URI', '4wp-seo' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Redirect URI', '4wp-seo-helper' ); ?></th>
 							<td><code class="forwp-seo-code"><?php echo esc_html( $redirect_uri ); ?></code></td>
 						</tr>
 					</table>
 					<div class="forwp-seo-form-actions">
-						<?php submit_button( __( 'Save credentials', '4wp-seo' ), 'primary', 'forwp_seo_gsc_save', false ); ?>
+						<?php submit_button( __( 'Save credentials', '4wp-seo-helper' ), 'primary', 'forwp_seo_gsc_save', false ); ?>
 					</div>
 				</form>
 			</div>
 
 			<div class="forwp-seo-panel forwp-seo-panel--nested">
-				<h2><?php esc_html_e( 'Connect', '4wp-seo' ); ?></h2>
+				<h2><?php esc_html_e( 'Connect', '4wp-seo-helper' ); ?></h2>
 				<p class="forwp-seo-connection-line <?php echo $is_connected ? 'forwp-seo-connection-line--ok' : ( $has_creds ? '' : 'forwp-seo-connection-line--warn' ); ?>">
 					<?php
 					if ( $is_connected ) {
-						esc_html_e( 'Connected to Google.', '4wp-seo' );
+						esc_html_e( 'Connected to Google.', '4wp-seo-helper' );
 					} elseif ( $has_creds ) {
-						esc_html_e( 'Credentials saved — connect your Google account.', '4wp-seo' );
+						esc_html_e( 'Credentials saved — connect your Google account.', '4wp-seo-helper' );
 					} else {
-						esc_html_e( 'Save Client ID and Secret first.', '4wp-seo' );
+						esc_html_e( 'Save Client ID and Secret first.', '4wp-seo-helper' );
 					}
 					?>
 				</p>
 				<div class="forwp-seo-inline-actions">
 					<?php if ( ! $is_connected && $has_creds ) : ?>
 						<a class="button button-primary" href="<?php echo esc_url( $this->get_connect_url( $client_id ) ); ?>">
-							<?php esc_html_e( 'Connect to Google', '4wp-seo' ); ?>
+							<?php esc_html_e( 'Connect to Google', '4wp-seo-helper' ); ?>
 						</a>
 					<?php elseif ( $is_connected ) : ?>
-						<span class="forwp-seo-badge forwp-seo-badge--live"><?php esc_html_e( 'Connected', '4wp-seo' ); ?></span>
+						<span class="forwp-seo-badge forwp-seo-badge--live"><?php esc_html_e( 'Connected', '4wp-seo-helper' ); ?></span>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -103,15 +105,15 @@ final class Admin {
 		<?php if ( $is_connected ) : ?>
 			<?php $properties = $this->get_properties(); ?>
 			<div class="forwp-seo-panel">
-				<h2><?php esc_html_e( 'Property', '4wp-seo' ); ?></h2>
+				<h2><?php esc_html_e( 'Property', '4wp-seo-helper' ); ?></h2>
 				<form method="post">
 					<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
 					<table class="form-table" role="presentation">
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Choose property', '4wp-seo' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Choose property', '4wp-seo-helper' ); ?></th>
 							<td>
 								<?php if ( empty( $properties ) ) : ?>
-									<p class="forwp-seo-admin-muted"><?php esc_html_e( 'No properties found or API error.', '4wp-seo' ); ?></p>
+									<p class="forwp-seo-admin-muted"><?php esc_html_e( 'No properties found or API error.', '4wp-seo-helper' ); ?></p>
 								<?php else : ?>
 									<select name="forwp_seo_gsc_site" class="regular-text">
 										<?php foreach ( $properties as $property ) : ?>
@@ -125,7 +127,7 @@ final class Admin {
 						</tr>
 					</table>
 					<div class="forwp-seo-form-actions">
-						<?php submit_button( __( 'Save property', '4wp-seo' ), 'secondary', 'forwp_seo_gsc_save_property', false ); ?>
+						<?php submit_button( __( 'Save property', '4wp-seo-helper' ), 'secondary', 'forwp_seo_gsc_save_property', false ); ?>
 					</div>
 				</form>
 			</div>
@@ -135,20 +137,20 @@ final class Admin {
 			<div class="forwp-seo-accordion">
 				<details class="forwp-seo-accordion__item">
 					<summary class="forwp-seo-accordion__summary">
-						<span class="forwp-seo-accordion__title"><?php esc_html_e( 'URL Inspection', '4wp-seo' ); ?></span>
-						<span class="forwp-seo-accordion__hint"><?php esc_html_e( 'Index status for a single URL', '4wp-seo' ); ?></span>
+						<span class="forwp-seo-accordion__title"><?php esc_html_e( 'URL Inspection', '4wp-seo-helper' ); ?></span>
+						<span class="forwp-seo-accordion__hint"><?php esc_html_e( 'Index status for a single URL', '4wp-seo-helper' ); ?></span>
 					</summary>
 					<div class="forwp-seo-accordion__panel">
 						<form method="post">
 							<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
 							<table class="form-table" role="presentation">
 								<tr>
-									<th scope="row"><label for="forwp_seo_gsc_inspect_url"><?php esc_html_e( 'URL', '4wp-seo' ); ?></label></th>
+									<th scope="row"><label for="forwp_seo_gsc_inspect_url"><?php esc_html_e( 'URL', '4wp-seo-helper' ); ?></label></th>
 									<td><input type="url" class="large-text" name="forwp_seo_gsc_inspect_url" id="forwp_seo_gsc_inspect_url" placeholder="https://example.com/page" /></td>
 								</tr>
 							</table>
 							<div class="forwp-seo-form-actions">
-								<?php submit_button( __( 'Inspect URL', '4wp-seo' ), 'secondary', 'forwp_seo_gsc_inspect', false ); ?>
+								<?php submit_button( __( 'Inspect URL', '4wp-seo-helper' ), 'secondary', 'forwp_seo_gsc_inspect', false ); ?>
 							</div>
 						</form>
 						<?php $this->render_inspection_results(); ?>
@@ -157,20 +159,20 @@ final class Admin {
 
 				<details class="forwp-seo-accordion__item">
 					<summary class="forwp-seo-accordion__summary">
-						<span class="forwp-seo-accordion__title"><?php esc_html_e( 'Search Analytics', '4wp-seo' ); ?></span>
-						<span class="forwp-seo-accordion__hint"><?php esc_html_e( 'Last 28 days', '4wp-seo' ); ?></span>
+						<span class="forwp-seo-accordion__title"><?php esc_html_e( 'Search Analytics', '4wp-seo-helper' ); ?></span>
+						<span class="forwp-seo-accordion__hint"><?php esc_html_e( 'Last 28 days', '4wp-seo-helper' ); ?></span>
 					</summary>
 					<div class="forwp-seo-accordion__panel">
 						<form method="post">
 							<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
 							<table class="form-table" role="presentation">
 								<tr>
-									<th scope="row"><label for="forwp_seo_gsc_analytics_url"><?php esc_html_e( 'URL', '4wp-seo' ); ?></label></th>
+									<th scope="row"><label for="forwp_seo_gsc_analytics_url"><?php esc_html_e( 'URL', '4wp-seo-helper' ); ?></label></th>
 									<td><input type="url" class="large-text" name="forwp_seo_gsc_analytics_url" id="forwp_seo_gsc_analytics_url" placeholder="https://example.com/page" /></td>
 								</tr>
 							</table>
 							<div class="forwp-seo-form-actions">
-								<?php submit_button( __( 'Load metrics', '4wp-seo' ), 'secondary', 'forwp_seo_gsc_analytics', false ); ?>
+								<?php submit_button( __( 'Load metrics', '4wp-seo-helper' ), 'secondary', 'forwp_seo_gsc_analytics', false ); ?>
 							</div>
 						</form>
 						<?php $this->render_analytics_results(); ?>
@@ -190,55 +192,62 @@ final class Admin {
 			return;
 		}
 
-		if ( empty( $_POST['forwp_seo_gsc_nonce'] ) || ! wp_verify_nonce( $_POST['forwp_seo_gsc_nonce'], 'forwp_seo_gsc_settings' ) ) {
+		if ( empty( $_POST['forwp_seo_gsc_nonce'] ) ) {
+			return;
+		}
+
+		$nonce = sanitize_text_field( wp_unslash( (string) $_POST['forwp_seo_gsc_nonce'] ) );
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'forwp_seo_gsc_settings' ) ) {
 			return;
 		}
 
 		if ( isset( $_POST['forwp_seo_gsc_save'] ) ) {
-			update_option( self::OPTION_CLIENT_ID, sanitize_text_field( $_POST['forwp_seo_gsc_client_id'] ?? '' ) );
-			update_option( self::OPTION_CLIENT_SECRET, sanitize_text_field( $_POST['forwp_seo_gsc_client_secret'] ?? '' ) );
+			update_option( self::OPTION_CLIENT_ID, sanitize_text_field( wp_unslash( (string) ( $_POST['forwp_seo_gsc_client_id'] ?? '' ) ) ) );
+			update_option( self::OPTION_CLIENT_SECRET, sanitize_text_field( wp_unslash( (string) ( $_POST['forwp_seo_gsc_client_secret'] ?? '' ) ) ) );
 		}
 
 		if ( isset( $_POST['forwp_seo_gsc_save_property'] ) ) {
-			update_option( self::OPTION_SITE, esc_url_raw( $_POST['forwp_seo_gsc_site'] ?? '' ) );
+			update_option( self::OPTION_SITE, esc_url_raw( wp_unslash( (string) ( $_POST['forwp_seo_gsc_site'] ?? '' ) ) ) );
 		}
 
 		if ( isset( $_POST['forwp_seo_gsc_inspect'] ) ) {
-			$url = esc_url_raw( $_POST['forwp_seo_gsc_inspect_url'] ?? '' );
+			$url = esc_url_raw( wp_unslash( (string) ( $_POST['forwp_seo_gsc_inspect_url'] ?? '' ) ) );
 			$this->set_last_inspection( $url );
 		}
 
 		if ( isset( $_POST['forwp_seo_gsc_analytics'] ) ) {
-			$url = esc_url_raw( $_POST['forwp_seo_gsc_analytics_url'] ?? '' );
+			$url = esc_url_raw( wp_unslash( (string) ( $_POST['forwp_seo_gsc_analytics_url'] ?? '' ) ) );
 			$this->set_last_analytics( $url );
 		}
 	}
 
 	public function handle_callback(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG ) );
 			exit;
 		}
 
-		$state = sanitize_text_field( $_GET['state'] ?? '' );
-		$code  = sanitize_text_field( $_GET['code'] ?? '' );
-		$error = sanitize_text_field( $_GET['error'] ?? '' );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google; state transient verified below.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['state'] ) ) : '';
+		$code  = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['code'] ) ) : '';
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['error'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$stored_state = get_transient( 'forwp_seo_gsc_state' );
 		if ( empty( $state ) || $state !== $stored_state ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG ) );
 			exit;
 		}
 
 		delete_transient( 'forwp_seo_gsc_state' );
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_error=' . rawurlencode( $error ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_error=' . rawurlencode( $error ) ) );
 			exit;
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_error=missing_code' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_error=missing_code' ) );
 			exit;
 		}
 
@@ -250,7 +259,7 @@ final class Admin {
 		$token  = $client->exchange_code( $client_id, $client_secret, $redirect_uri, $code );
 
 		if ( isset( $token['error'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&gsc_error=' . rawurlencode( $token['error'] ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&gsc_error=' . rawurlencode( $token['error'] ) ) );
 			exit;
 		}
 
@@ -260,7 +269,7 @@ final class Admin {
 		}
 		update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $token['expires_in'] ?? 0 ) );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_connected=1' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_connected=1' ) );
 		exit;
 	}
 
@@ -295,19 +304,19 @@ final class Admin {
 
 		$stored_state = get_transient( 'forwp_seo_gsc_state' );
 		if ( empty( $state ) || $state !== $stored_state ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_error=invalid_state' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_error=invalid_state' ) );
 			exit;
 		}
 
 		delete_transient( 'forwp_seo_gsc_state' );
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_error=' . rawurlencode( $error ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_error=' . rawurlencode( $error ) ) );
 			exit;
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_error=missing_code' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_error=missing_code' ) );
 			exit;
 		}
 
@@ -319,7 +328,7 @@ final class Admin {
 		$token  = $client->exchange_code( $client_id, $client_secret, $redirect_uri, $code );
 
 		if ( isset( $token['error'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&gsc_error=' . rawurlencode( $token['error'] ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&gsc_error=' . rawurlencode( $token['error'] ) ) );
 			exit;
 		}
 
@@ -329,7 +338,7 @@ final class Admin {
 		}
 		update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $token['expires_in'] ?? 0 ) );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=4wp-seo&tab=gsc&gsc_connected=1' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=gsc&gsc_connected=1' ) );
 		exit;
 	}
 
@@ -439,15 +448,15 @@ final class Admin {
 		?>
 		<table class="forwp-seo-ref-table">
 			<thead>
-				<tr><th><?php esc_html_e( 'Field', '4wp-seo' ); ?></th><th><?php esc_html_e( 'Value', '4wp-seo' ); ?></th></tr>
+				<tr><th><?php esc_html_e( 'Field', '4wp-seo-helper' ); ?></th><th><?php esc_html_e( 'Value', '4wp-seo-helper' ); ?></th></tr>
 			</thead>
 			<tbody>
-				<tr><td><?php esc_html_e( 'Index status', '4wp-seo' ); ?></td><td><?php echo esc_html( $inspection['verdict'] ?? '' ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Coverage state', '4wp-seo' ); ?></td><td><?php echo esc_html( $inspection['coverageState'] ?? '' ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Last crawl', '4wp-seo' ); ?></td><td><?php echo esc_html( $inspection['lastCrawlTime'] ?? '' ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Canonical (user)', '4wp-seo' ); ?></td><td><?php echo esc_html( $inspection['userCanonical'] ?? '' ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Canonical (google)', '4wp-seo' ); ?></td><td><?php echo esc_html( $inspection['googleCanonical'] ?? '' ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Robots state', '4wp-seo' ); ?></td><td><?php echo esc_html( $inspection['robotsTxtState'] ?? '' ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Index status', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $inspection['verdict'] ?? '' ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Coverage state', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $inspection['coverageState'] ?? '' ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Last crawl', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $inspection['lastCrawlTime'] ?? '' ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Canonical (user)', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $inspection['userCanonical'] ?? '' ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Canonical (google)', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $inspection['googleCanonical'] ?? '' ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Robots state', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $inspection['robotsTxtState'] ?? '' ); ?></td></tr>
 			</tbody>
 		</table>
 		<?php
@@ -469,13 +478,13 @@ final class Admin {
 		?>
 		<table class="forwp-seo-ref-table">
 			<thead>
-				<tr><th><?php esc_html_e( 'Metric', '4wp-seo' ); ?></th><th><?php esc_html_e( 'Value', '4wp-seo' ); ?></th></tr>
+				<tr><th><?php esc_html_e( 'Metric', '4wp-seo-helper' ); ?></th><th><?php esc_html_e( 'Value', '4wp-seo-helper' ); ?></th></tr>
 			</thead>
 			<tbody>
-				<tr><td><?php esc_html_e( 'Clicks', '4wp-seo' ); ?></td><td><?php echo esc_html( $row['clicks'] ?? 0 ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Impressions', '4wp-seo' ); ?></td><td><?php echo esc_html( $row['impressions'] ?? 0 ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'CTR', '4wp-seo' ); ?></td><td><?php echo esc_html( $row['ctr'] ?? 0 ); ?></td></tr>
-				<tr><td><?php esc_html_e( 'Avg position', '4wp-seo' ); ?></td><td><?php echo esc_html( $row['position'] ?? 0 ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Clicks', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $row['clicks'] ?? 0 ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Impressions', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $row['impressions'] ?? 0 ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'CTR', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $row['ctr'] ?? 0 ); ?></td></tr>
+				<tr><td><?php esc_html_e( 'Avg position', '4wp-seo-helper' ); ?></td><td><?php echo esc_html( $row['position'] ?? 0 ); ?></td></tr>
 			</tbody>
 		</table>
 		<?php

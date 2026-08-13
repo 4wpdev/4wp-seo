@@ -25,7 +25,7 @@ final class TechArticleMarkup {
 		if ( $goal !== '' ) {
 			$parts[] = self::wrap_section(
 				TechArticleWrappers::GOAL_BLOCK,
-				self::heading_paragraph_section( __( 'Goal', '4wp-seo' ), $goal )
+				self::heading_paragraph_section( __( 'Goal', '4wp-seo-helper' ), $goal )
 			);
 		}
 
@@ -35,7 +35,7 @@ final class TechArticleMarkup {
 		if ( is_array( $steps ) && $steps !== [] ) {
 			$steps_inner = self::wrap_section(
 				TechArticleWrappers::STEPS_BLOCK,
-				self::heading_block( __( 'Steps', '4wp-seo' ), 2 ) . "\n\n" . self::build_steps_inner( $steps )
+				self::heading_block( __( 'Steps', '4wp-seo-helper' ), 2 ) . "\n\n" . self::build_steps_inner( $steps )
 			);
 		}
 
@@ -47,7 +47,7 @@ final class TechArticleMarkup {
 		if ( is_array( $issues ) && $issues !== [] ) {
 			$parts[] = self::wrap_section(
 				TechArticleWrappers::ISSUES_BLOCK,
-				self::heading_block( __( 'Common mistakes', '4wp-seo' ), 2 ) . "\n\n" . self::build_list_block( $issues )
+				self::heading_block( __( 'Common mistakes', '4wp-seo-helper' ), 2 ) . "\n\n" . self::build_list_block( $issues )
 			);
 		}
 
@@ -330,7 +330,7 @@ final class TechArticleMarkup {
 
 		return sprintf(
 			"<!-- wp:group {\"className\":\"forwp-practice-case__real-cases\"} -->\n<div class=\"wp-block-group forwp-practice-case__real-cases\">%s\n%s</div>\n<!-- /wp:group -->",
-			"\n" . self::heading_block( __( 'Real cases', '4wp-seo' ), 2 ),
+			"\n" . self::heading_block( __( 'Real cases', '4wp-seo-helper' ), 2 ),
 			"<!-- wp:list -->\n<ul class=\"wp-block-list\">{$list}</ul>\n<!-- /wp:list -->"
 		);
 	}
@@ -406,7 +406,7 @@ final class TechArticleMarkup {
 			return '';
 		}
 
-		return self::heading_block( __( 'FAQ', '4wp-seo' ), 2 ) . "\n\n" . trim( $details );
+		return self::heading_block( __( 'FAQ', '4wp-seo-helper' ), 2 ) . "\n\n" . trim( $details );
 	}
 
 	private static function build_details_block( string $question, string $answer ): string {

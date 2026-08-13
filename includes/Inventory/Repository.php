@@ -323,13 +323,16 @@ final class Repository {
 		$previous = null;
 
 		if ( '' !== $lang && 'wpml' === $provider->get_id() && has_action( 'wpml_switch_language' ) ) {
+			// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML third-party hooks.
 			$previous = apply_filters( 'wpml_current_language', null );
 			do_action( 'wpml_switch_language', $lang );
+			// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		}
 
 		$query = new \WP_Query( $query_args );
 
 		if ( is_string( $previous ) && '' !== $previous && has_action( 'wpml_switch_language' ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML third-party hook.
 			do_action( 'wpml_switch_language', $previous );
 		}
 

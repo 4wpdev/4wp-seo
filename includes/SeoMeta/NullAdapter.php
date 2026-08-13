@@ -15,7 +15,7 @@ final class NullAdapter implements AdapterInterface {
 	}
 
 	public function get_label(): string {
-		return __( 'No SEO plugin detected', '4wp-seo' );
+		return __( 'No SEO plugin detected', '4wp-seo-helper' );
 	}
 
 	public function is_available(): bool {

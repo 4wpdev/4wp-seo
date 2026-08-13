@@ -21,7 +21,9 @@ final class InventoryPage {
 			return;
 		}
 
-		$view = sanitize_key( (string) ( $_GET['view'] ?? 'inventory' ) );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only admin inventory view switch.
+		$view = sanitize_key( wp_unslash( (string) ( $_GET['view'] ?? 'inventory' ) ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ( ! in_array( $view, [ 'inventory', 'queue' ], true ) ) {
 			$view = 'inventory';
 		}
@@ -37,15 +39,16 @@ final class InventoryPage {
 	}
 
 	private static function render_notices(): void {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only PRG success/error flags.
 		if ( isset( $_GET['forwp_priority_updated'] ) ) {
-			$count = max( 0, (int) $_GET['forwp_priority_updated'] );
+			$count = max( 0, absint( wp_unslash( $_GET['forwp_priority_updated'] ) ) );
 			if ( $count > 0 ) {
 				printf(
 					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 					esc_html(
 						sprintf(
 							/* translators: %d: number of updated items */
-							_n( 'Priority updated for %d item.', 'Priority updated for %d items.', $count, '4wp-seo' ),
+							_n( 'Priority updated for %d item.', 'Priority updated for %d items.', $count, '4wp-seo-helper' ),
 							$count
 						)
 					)
@@ -54,20 +57,21 @@ final class InventoryPage {
 		}
 
 		if ( isset( $_GET['forwp_priority_error'] ) ) {
-			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not update priority.', '4wp-seo' ) . '</p></div>';
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not update priority.', '4wp-seo-helper' ) . '</p></div>';
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	}
 
 	private static function render_tabs( string $active ): void {
 		$tabs = [
-			'inventory' => __( 'Inventory', '4wp-seo' ),
-			'queue'     => __( 'Priority queue', '4wp-seo' ),
+			'inventory' => __( 'Inventory', '4wp-seo-helper' ),
+			'queue'     => __( 'Priority queue', '4wp-seo-helper' ),
 		];
 		?>
 		<h2 class="nav-tab-wrapper forwp-seo-inventory__tabs">
 			<?php foreach ( $tabs as $slug => $label ) : ?>
 				<a
-					href="<?php echo esc_url( admin_url( 'admin.php?page=4wp-seo-inventory&view=' . $slug ) ); ?>"
+					href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::INVENTORY_PAGE_SLUG . '&view=' . $slug ) ); ?>"
 					class="nav-tab<?php echo $active === $slug ? ' nav-tab-active' : ''; ?>"
 				><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
@@ -80,14 +84,16 @@ final class InventoryPage {
 		$provider   = MultilingualRegistry::get_active();
 		$languages  = $provider->get_languages();
 		$show_lang  = count( $languages ) > 1;
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only admin inventory filters.
 		$filters    = [
-			'page'      => isset( $_GET['paged'] ) ? (int) $_GET['paged'] : 1,
-			'post_type' => sanitize_key( (string) ( $_GET['post_type'] ?? '' ) ),
-			'lang'      => sanitize_key( (string) ( $_GET['lang'] ?? '' ) ),
-			'status'    => sanitize_key( (string) ( $_GET['status'] ?? 'publish' ) ),
-			'missing'   => sanitize_key( (string) ( $_GET['missing'] ?? '' ) ),
-			'search'    => sanitize_text_field( (string) ( $_GET['s'] ?? '' ) ),
+			'page'      => isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1,
+			'post_type' => sanitize_key( wp_unslash( (string) ( $_GET['post_type'] ?? '' ) ) ),
+			'lang'      => sanitize_key( wp_unslash( (string) ( $_GET['lang'] ?? '' ) ) ),
+			'status'    => sanitize_key( wp_unslash( (string) ( $_GET['status'] ?? 'publish' ) ) ),
+			'missing'   => sanitize_key( wp_unslash( (string) ( $_GET['missing'] ?? '' ) ) ),
+			'search'    => sanitize_text_field( wp_unslash( (string) ( $_GET['s'] ?? '' ) ) ),
 		];
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$stats = $repository->get_stats(
 			[
@@ -103,7 +109,7 @@ final class InventoryPage {
 			add_query_arg(
 				array_filter(
 					[
-						'page'      => '4wp-seo-inventory',
+						'page'      => Menu::INVENTORY_PAGE_SLUG,
 						'view'      => 'inventory',
 						'post_type' => $filters['post_type'],
 						'lang'      => $filters['lang'],
@@ -137,11 +143,11 @@ final class InventoryPage {
 
 		?>
 		<div class="wrap forwp-seo-inventory">
-			<h1><?php esc_html_e( 'SEO Inventory', '4wp-seo' ); ?></h1>
+			<h1><?php esc_html_e( 'SEO Inventory', '4wp-seo-helper' ); ?></h1>
 			<p>
-				<?php esc_html_e( 'Full list grouped by priority tier (P1 → P2 → P3 → Other). Drag rows to reorder or move between groups. Priority reflects business importance, not SEO score.', '4wp-seo' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=4wp-seo&tab=settings' ) ); ?>"><?php esc_html_e( 'Configure tier names', '4wp-seo' ); ?></a>
-				<a class="page-title-action" href="<?php echo esc_url( $export_url ); ?>"><?php esc_html_e( 'Export CSV', '4wp-seo' ); ?></a>
+				<?php esc_html_e( 'Full list grouped by priority tier (P1 → P2 → P3 → Other). Drag rows to reorder or move between groups. Priority reflects business importance, not SEO score.', '4wp-seo-helper' ); ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=settings' ) ); ?>"><?php esc_html_e( 'Configure tier names', '4wp-seo-helper' ); ?></a>
+				<a class="page-title-action" href="<?php echo esc_url( $export_url ); ?>"><?php esc_html_e( 'Export CSV', '4wp-seo-helper' ); ?></a>
 			</p>
 
 			<?php self::render_tabs( 'inventory' ); ?>
@@ -151,14 +157,14 @@ final class InventoryPage {
 
 			<div class="forwp-seo-inventory__stats">
 				<p>
-					<strong><?php esc_html_e( 'Posts:', '4wp-seo' ); ?></strong>
+					<strong><?php esc_html_e( 'Posts:', '4wp-seo-helper' ); ?></strong>
 					<?php echo esc_html( (string) $stats['posts'] ); ?>
 					&nbsp;|&nbsp;
-					<strong><?php esc_html_e( 'Avg completeness:', '4wp-seo' ); ?></strong>
+					<strong><?php esc_html_e( 'Avg completeness:', '4wp-seo-helper' ); ?></strong>
 					<?php echo esc_html( (string) $stats['avg_completeness'] ); ?>%
 				</p>
 				<?php if ( $show_lang && ! empty( $stats['by_language'] ) ) : ?>
-					<p><strong><?php esc_html_e( 'By language:', '4wp-seo' ); ?></strong>
+					<p><strong><?php esc_html_e( 'By language:', '4wp-seo-helper' ); ?></strong>
 					<?php
 					$parts = [];
 					foreach ( $stats['by_language'] as $code => $data ) {
@@ -169,7 +175,7 @@ final class InventoryPage {
 					</p>
 				<?php endif; ?>
 				<?php if ( ! empty( $stats['missing_counts'] ) ) : ?>
-					<p><strong><?php esc_html_e( 'Missing fields:', '4wp-seo' ); ?></strong>
+					<p><strong><?php esc_html_e( 'Missing fields:', '4wp-seo-helper' ); ?></strong>
 					<?php
 					$missing_parts = [];
 					foreach ( $stats['missing_counts'] as $field => $count ) {
@@ -182,12 +188,12 @@ final class InventoryPage {
 			</div>
 
 			<form method="get">
-				<input type="hidden" name="page" value="4wp-seo-inventory" />
+				<input type="hidden" name="page" value="<?php echo esc_attr( Menu::INVENTORY_PAGE_SLUG ); ?>" />
 				<input type="hidden" name="view" value="inventory" />
 				<div class="tablenav top forwp-seo-inventory__toolbar">
 					<div class="alignleft actions">
 						<select name="post_type">
-							<option value=""><?php esc_html_e( 'All post types', '4wp-seo' ); ?></option>
+							<option value=""><?php esc_html_e( 'All post types', '4wp-seo-helper' ); ?></option>
 							<?php foreach ( PostTypeDiscovery::get_labeled() as $type ) : ?>
 								<option value="<?php echo esc_attr( $type['slug'] ); ?>" <?php selected( $filters['post_type'], $type['slug'] ); ?>>
 									<?php echo esc_html( $type['label'] . ' (' . $type['slug'] . ')' ); ?>
@@ -196,7 +202,7 @@ final class InventoryPage {
 						</select>
 						<?php if ( $show_lang ) : ?>
 						<select name="lang">
-							<option value=""><?php esc_html_e( 'All languages', '4wp-seo' ); ?></option>
+							<option value=""><?php esc_html_e( 'All languages', '4wp-seo-helper' ); ?></option>
 							<?php foreach ( $languages as $language ) : ?>
 								<option value="<?php echo esc_attr( $language['code'] ); ?>" <?php selected( $filters['lang'], $language['code'] ); ?>>
 									<?php echo esc_html( $language['name'] ); ?>
@@ -205,19 +211,19 @@ final class InventoryPage {
 						</select>
 						<?php endif; ?>
 						<select name="missing">
-							<option value=""><?php esc_html_e( 'Any completeness', '4wp-seo' ); ?></option>
-							<option value="any" <?php selected( $filters['missing'], 'any' ); ?>><?php esc_html_e( 'Has missing fields', '4wp-seo' ); ?></option>
-							<option value="title" <?php selected( $filters['missing'], 'title' ); ?>><?php esc_html_e( 'Missing title', '4wp-seo' ); ?></option>
-							<option value="description" <?php selected( $filters['missing'], 'description' ); ?>><?php esc_html_e( 'Missing description', '4wp-seo' ); ?></option>
-							<option value="focus_keyword" <?php selected( $filters['missing'], 'focus_keyword' ); ?>><?php esc_html_e( 'Missing focus keyword', '4wp-seo' ); ?></option>
-							<option value="og_image" <?php selected( $filters['missing'], 'og_image' ); ?>><?php esc_html_e( 'Missing OG image', '4wp-seo' ); ?></option>
+							<option value=""><?php esc_html_e( 'Any completeness', '4wp-seo-helper' ); ?></option>
+							<option value="any" <?php selected( $filters['missing'], 'any' ); ?>><?php esc_html_e( 'Has missing fields', '4wp-seo-helper' ); ?></option>
+							<option value="title" <?php selected( $filters['missing'], 'title' ); ?>><?php esc_html_e( 'Missing title', '4wp-seo-helper' ); ?></option>
+							<option value="description" <?php selected( $filters['missing'], 'description' ); ?>><?php esc_html_e( 'Missing description', '4wp-seo-helper' ); ?></option>
+							<option value="focus_keyword" <?php selected( $filters['missing'], 'focus_keyword' ); ?>><?php esc_html_e( 'Missing focus keyword', '4wp-seo-helper' ); ?></option>
+							<option value="og_image" <?php selected( $filters['missing'], 'og_image' ); ?>><?php esc_html_e( 'Missing OG image', '4wp-seo-helper' ); ?></option>
 						</select>
-						<?php submit_button( __( 'Filter', '4wp-seo' ), '', 'forwp_seo_inventory_filter', false ); ?>
+						<?php submit_button( __( 'Filter', '4wp-seo-helper' ), '', 'forwp_seo_inventory_filter', false ); ?>
 					</div>
 					<p class="search-box">
-						<label class="screen-reader-text" for="seo-inventory-search"><?php esc_html_e( 'Search', '4wp-seo' ); ?></label>
+						<label class="screen-reader-text" for="seo-inventory-search"><?php esc_html_e( 'Search', '4wp-seo-helper' ); ?></label>
 						<input type="search" id="seo-inventory-search" name="s" value="<?php echo esc_attr( $filters['search'] ); ?>" />
-						<?php submit_button( __( 'Search', '4wp-seo' ), '', '', false ); ?>
+						<?php submit_button( __( 'Search', '4wp-seo-helper' ), '', '', false ); ?>
 					</p>
 				</div>
 				<?php $table->display(); ?>
@@ -462,7 +468,7 @@ final class InventoryPage {
 		?>
 		<div class="forwp-seo-priority-compact" id="forwp-seo-priority-board">
 			<p class="forwp-seo-priority-compact__hint">
-				<?php esc_html_e( 'Business priority lanes — independent of SEO score. Drag rows into groups below, or onto a lane.', '4wp-seo' ); ?>
+				<?php esc_html_e( 'Business priority lanes — independent of SEO score. Drag rows into groups below, or onto a lane.', '4wp-seo-helper' ); ?>
 			</p>
 			<div class="forwp-seo-priority-lanes forwp-seo-priority-lanes--compact">
 				<?php foreach ( PriorityQueue::LANE_IDS as $lane_id ) : ?>
@@ -471,7 +477,7 @@ final class InventoryPage {
 					$is_active  = 'queue' === $view && $active_priority === $lane_int;
 					$panel_url  = add_query_arg(
 						[
-							'page'     => '4wp-seo-inventory',
+							'page'     => Menu::INVENTORY_PAGE_SLUG,
 							'view'     => 'queue',
 							'priority' => $lane_id,
 						],
@@ -491,7 +497,7 @@ final class InventoryPage {
 								<?php
 								printf(
 									/* translators: %d: number of queued items */
-									esc_html( _n( '%d item', '%d items', count( $lanes[ $lane_id ] ), '4wp-seo' ) ),
+									esc_html( _n( '%d item', '%d items', count( $lanes[ $lane_id ] ), '4wp-seo-helper' ) ),
 									count( $lanes[ $lane_id ] )
 								);
 								?>
@@ -499,7 +505,7 @@ final class InventoryPage {
 						</div>
 						<div class="forwp-seo-priority-lane__mini-list">
 							<?php if ( empty( $lanes[ $lane_id ] ) ) : ?>
-								<span class="forwp-seo-priority-lane__placeholder"><?php esc_html_e( 'Empty', '4wp-seo' ); ?></span>
+								<span class="forwp-seo-priority-lane__placeholder"><?php esc_html_e( 'Empty', '4wp-seo-helper' ); ?></span>
 							<?php else : ?>
 								<?php foreach ( array_slice( $lanes[ $lane_id ], 0, 3 ) as $item ) : ?>
 									<?php self::render_compact_lane_item( $item ); ?>
@@ -509,7 +515,7 @@ final class InventoryPage {
 										<?php
 										printf(
 											/* translators: %d: additional item count */
-											esc_html__( '+%d more', '4wp-seo' ),
+											esc_html__( '+%d more', '4wp-seo-helper' ),
 											count( $lanes[ $lane_id ] ) - 3
 										);
 										?>
@@ -548,7 +554,7 @@ final class InventoryPage {
 
 	private static function render_priority_subnav( ?int $active_priority ): void {
 		$items = [
-			'all' => __( 'All queued', '4wp-seo' ),
+			'all' => __( 'All queued', '4wp-seo-helper' ),
 			'1'   => PriorityLabels::get_formatted( 1 ),
 			'2'   => PriorityLabels::get_formatted( 2 ),
 			'3'   => PriorityLabels::get_formatted( 3 ),
@@ -559,7 +565,7 @@ final class InventoryPage {
 			$links = [];
 			foreach ( $items as $key => $label ) {
 				$args = [
-					'page' => '4wp-seo-inventory',
+					'page' => Menu::INVENTORY_PAGE_SLUG,
 					'view' => 'queue',
 				];
 				if ( 'all' !== $key ) {
@@ -582,7 +588,9 @@ final class InventoryPage {
 	}
 
 	private static function render_queue_view(): void {
-		$priority_param = sanitize_key( (string) ( $_GET['priority'] ?? '' ) );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only admin queue filter.
+		$priority_param = sanitize_key( wp_unslash( (string) ( $_GET['priority'] ?? '' ) ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$active_priority = null;
 		if ( in_array( $priority_param, [ '1', '2', '3' ], true ) ) {
 			$active_priority = (int) $priority_param;
@@ -599,7 +607,7 @@ final class InventoryPage {
 			add_query_arg(
 				array_filter(
 					[
-						'page'     => '4wp-seo-inventory',
+						'page'     => Menu::INVENTORY_PAGE_SLUG,
 						'view'     => 'queue',
 						'priority' => $active_priority ? (string) $active_priority : '',
 					]
@@ -611,8 +619,8 @@ final class InventoryPage {
 		$table->prepare_items();
 		?>
 		<div class="wrap forwp-seo-inventory">
-			<h1><?php esc_html_e( 'SEO Inventory', '4wp-seo' ); ?></h1>
-			<p><?php esc_html_e( 'Priority queue — same table as Inventory, filtered by lane. Drag rows to reorder or reassign.', '4wp-seo' ); ?></p>
+			<h1><?php esc_html_e( 'SEO Inventory', '4wp-seo-helper' ); ?></h1>
+			<p><?php esc_html_e( 'Priority queue — same table as Inventory, filtered by lane. Drag rows to reorder or reassign.', '4wp-seo-helper' ); ?></p>
 
 			<?php self::render_tabs( 'queue' ); ?>
 			<?php self::render_compact_panels( 'queue', $active_priority ); ?>
@@ -620,7 +628,7 @@ final class InventoryPage {
 			<p class="forwp-seo-inventory__drag-status" aria-live="polite"></p>
 
 			<form method="get">
-				<input type="hidden" name="page" value="4wp-seo-inventory" />
+				<input type="hidden" name="page" value="<?php echo esc_attr( Menu::INVENTORY_PAGE_SLUG ); ?>" />
 				<input type="hidden" name="view" value="queue" />
 				<?php if ( $active_priority ) : ?>
 					<input type="hidden" name="priority" value="<?php echo esc_attr( (string) $active_priority ); ?>" />

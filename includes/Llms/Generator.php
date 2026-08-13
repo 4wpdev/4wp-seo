@@ -58,11 +58,13 @@ final class Generator {
 		}
 
 		header( 'Content-Type: text/plain; charset=utf-8' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Plain-text llms.txt; content built from escaped post data.
 		echo $content;
 		exit;
 	}
 
 	private function build_llms_txt(): string {
+		// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- TechArticle flag lookup for llms.txt index.
 		$posts = get_posts(
 			[
 				'post_type'      => 'any',
@@ -72,6 +74,7 @@ final class Generator {
 				'meta_value'     => '1',
 			]
 		);
+		// phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 
 		if ( empty( $posts ) ) {
 			return '';

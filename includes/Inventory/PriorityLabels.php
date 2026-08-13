@@ -17,9 +17,9 @@ final class PriorityLabels {
 	 */
 	public static function get_defaults(): array {
 		return [
-			'1' => __( 'Top priority', '4wp-seo' ),
-			'2' => __( 'Secondary', '4wp-seo' ),
-			'3' => __( 'Backlog', '4wp-seo' ),
+			'1' => __( 'Top priority', '4wp-seo-helper' ),
+			'2' => __( 'Secondary', '4wp-seo-helper' ),
+			'3' => __( 'Backlog', '4wp-seo-helper' ),
 		];
 	}
 
@@ -53,7 +53,7 @@ final class PriorityLabels {
 	public static function get_formatted( int $priority ): string {
 		return sprintf(
 			/* translators: 1: priority tier number (1–3), 2: custom tier label */
-			__( 'P%1$d — %2$s', '4wp-seo' ),
+			__( 'P%1$d — %2$s', '4wp-seo-helper' ),
 			$priority,
 			self::get( $priority )
 		);
@@ -71,7 +71,7 @@ final class PriorityLabels {
 			1 => self::get_formatted( 1 ),
 			2 => self::get_formatted( 2 ),
 			3 => self::get_formatted( 3 ),
-			0 => __( 'Other', '4wp-seo' ),
+			0 => __( 'Other', '4wp-seo-helper' ),
 		];
 	}
 

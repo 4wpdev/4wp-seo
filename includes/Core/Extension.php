@@ -36,7 +36,6 @@ final class Extension {
 	}
 
 	private function init(): void {
-		add_action( 'init', [ $this, 'load_textdomain' ] );
 		add_action( 'init', [ $this, 'register_post_meta' ] );
 		if ( Release::is_module_public( Release::MODULE_TECHARTICLE ) ) {
 			add_action( 'add_meta_boxes', [ $this, 'register_meta_boxes' ] );
@@ -59,10 +58,6 @@ final class Extension {
 			}
 			Notices::get_instance();
 		}
-	}
-
-	public function load_textdomain(): void {
-		load_plugin_textdomain( '4wp-seo', false, dirname( plugin_basename( FORWP_SEO_HELPER_FILE ) ) . '/languages' );
 	}
 
 	public function register_post_meta(): void {
@@ -101,7 +96,7 @@ final class Extension {
 		<p>
 			<label>
 				<input type="checkbox" name="forwp_seo_techarticle_enabled" value="1" <?php checked( $enabled ); ?> />
-				<?php esc_html_e( 'Enable TechArticle schema for this post', '4wp-seo' ); ?>
+				<?php esc_html_e( 'Enable TechArticle schema for this post', '4wp-seo-helper' ); ?>
 			</label>
 		</p>
 		<?php
@@ -112,7 +107,11 @@ final class Extension {
 			return;
 		}
 
-		if ( ! isset( $_POST['forwp_seo_meta_nonce'] ) || ! wp_verify_nonce( $_POST['forwp_seo_meta_nonce'], 'forwp_seo_meta_box' ) ) {
+		$nonce = isset( $_POST['forwp_seo_meta_nonce'] )
+			? sanitize_text_field( wp_unslash( (string) $_POST['forwp_seo_meta_nonce'] ) )
+			: '';
+
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'forwp_seo_meta_box' ) ) {
 			return;
 		}
 

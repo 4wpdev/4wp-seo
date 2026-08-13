@@ -34,7 +34,7 @@ final class BulkUpdater {
 				'errors'  => [
 					[
 						'post_id' => 0,
-						'message' => __( 'No SEO plugin adapter is active.', '4wp-seo' ),
+						'message' => __( 'No SEO plugin adapter is active.', '4wp-seo-helper' ),
 					],
 				],
 			];
@@ -47,7 +47,7 @@ final class BulkUpdater {
 			if ( $post_id <= 0 ) {
 				$errors[] = [
 					'post_id' => $post_id,
-					'message' => __( 'Invalid post ID.', '4wp-seo' ),
+					'message' => __( 'Invalid post ID.', '4wp-seo-helper' ),
 				];
 				continue;
 			}
@@ -55,7 +55,7 @@ final class BulkUpdater {
 			if ( ! Auth::can_edit_inventory() && ! current_user_can( 'edit_post', $post_id ) ) {
 				$errors[] = [
 					'post_id' => $post_id,
-					'message' => __( 'Insufficient permissions.', '4wp-seo' ),
+					'message' => __( 'Insufficient permissions.', '4wp-seo-helper' ),
 				];
 				continue;
 			}
@@ -63,7 +63,7 @@ final class BulkUpdater {
 			if ( null === $this->repository->get_record( $post_id ) ) {
 				$errors[] = [
 					'post_id' => $post_id,
-					'message' => __( 'Post is not in the SEO inventory scope.', '4wp-seo' ),
+					'message' => __( 'Post is not in the SEO inventory scope.', '4wp-seo-helper' ),
 				];
 				continue;
 			}
@@ -72,7 +72,7 @@ final class BulkUpdater {
 			if ( empty( $normalized ) ) {
 				$errors[] = [
 					'post_id' => $post_id,
-					'message' => __( 'No supported fields provided.', '4wp-seo' ),
+					'message' => __( 'No supported fields provided.', '4wp-seo-helper' ),
 				];
 				continue;
 			}
@@ -80,7 +80,7 @@ final class BulkUpdater {
 			if ( ! $adapter->write( $post_id, $normalized ) ) {
 				$errors[] = [
 					'post_id' => $post_id,
-					'message' => __( 'Failed to write SEO meta.', '4wp-seo' ),
+					'message' => __( 'Failed to write SEO meta.', '4wp-seo-helper' ),
 				];
 				continue;
 			}

@@ -170,9 +170,9 @@ final class TechArticleWrappers {
 	 */
 	public function render_completion( array $attributes ): string {
 		$columns = [
-			'perfect'  => __( 'What you nailed', '4wp-seo' ),
-			'optimize' => __( 'Level up', '4wp-seo' ),
-			'next'     => __( 'What\'s next', '4wp-seo' ),
+			'perfect'  => __( 'What you nailed', '4wp-seo-helper' ),
+			'optimize' => __( 'Level up', '4wp-seo-helper' ),
+			'next'     => __( 'What\'s next', '4wp-seo-helper' ),
 		];
 
 		$html = '';

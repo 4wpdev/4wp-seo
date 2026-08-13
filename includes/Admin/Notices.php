@@ -35,21 +35,22 @@ final class Notices {
 		if ( 'none' === $adapter->get_id() ) {
 			$this->render_notice(
 				'warning',
-				__( '4WP SEO Helper: no SEO plugin detected (Yoast or All in One SEO). SEO inventory reads and bulk updates will not work until one is active.', '4wp-seo' )
+				__( '4WP SEO Helper: no SEO plugin detected (Yoast or All in One SEO). SEO inventory reads and bulk updates will not work until one is active.', '4wp-seo-helper' )
 			);
 		}
 
 		if ( ! InventoryModule::get_instance()->is_enabled() && $this->is_seo_admin_screen() ) {
 			$this->render_notice(
 				'info',
-				__( 'SEO inventory REST API is disabled. Enable it under 4wp SEO → Settings.', '4wp-seo' )
+				__( 'SEO inventory REST API is disabled. Enable it under 4wp SEO → Settings.', '4wp-seo-helper' )
 			);
 		}
 	}
 
 	private function is_seo_admin_screen(): bool {
-		$page = isset( $_GET['page'] ) ? sanitize_key( (string) $_GET['page'] ) : '';
-		return in_array( $page, [ '4wp-seo', '4wp-seo-inventory' ], true );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin screen detection.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+		return in_array( $page, [ Menu::PAGE_SLUG, Menu::INVENTORY_PAGE_SLUG ], true );
 	}
 
 	private function render_notice( string $type, string $message ): void {

@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML third-party hooks.
 final class WpmlProvider implements ProviderInterface {
 	public function get_id(): string {
 		return 'wpml';
@@ -104,3 +105,4 @@ final class WpmlProvider implements ProviderInterface {
 		return $group;
 	}
 }
+// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound

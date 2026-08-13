@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="4WP SEO Helper">
+	<description>PHPCS for 4wp-seo-helper (extends 4wp-dev-toolkit).</description>
+
+	<rule ref="../4wp-dev-toolkit/phpcs.xml.dist"/>
+
+	<file>4wp-seo-helper.php</file>
+	<file>includes</file>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+
+	<config name="text_domain" value="4wp-seo-helper"/>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="forwp"/>
+				<element value="FORWP"/>
+				<element value="Forwp"/>
+			</property>
+		</properties>
+	</rule>
+</ruleset>
