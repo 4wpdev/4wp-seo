@@ -34,8 +34,9 @@ final class Repository {
 		$search    = sanitize_text_field( (string) ( $args['search'] ?? '' ) );
 		$min_score = isset( $args['min_score'] ) && '' !== (string) $args['min_score'] ? (int) $args['min_score'] : null;
 		$max_score = isset( $args['max_score'] ) && '' !== (string) $args['max_score'] ? (int) $args['max_score'] : null;
+		$sort_by_priority = ! empty( $args['sort_by_priority'] );
 
-		$has_post_filters = '' !== $missing || null !== $min_score || null !== $max_score;
+		$has_post_filters = '' !== $missing || null !== $min_score || null !== $max_score || $sort_by_priority;
 
 		$query_args = [
 			'post_type'              => $this->resolve_post_types( $post_type ),
@@ -82,6 +83,10 @@ final class Repository {
 			}
 
 			$records[] = $record;
+		}
+
+		if ( $sort_by_priority ) {
+			$records = ( new PriorityQueue() )->sort_records( $records );
 		}
 
 		if ( $has_post_filters ) {
@@ -250,6 +255,8 @@ final class Repository {
 			$group
 		);
 
+		$slot = ( new PriorityQueue() )->get_post_slot( $post->ID );
+
 		return [
 			'post_id'            => $post->ID,
 			'lang'               => $provider->get_post_language( $post->ID ),
@@ -271,6 +278,8 @@ final class Repository {
 			'translation_group'  => $group_ids,
 			'seo_adapter'        => $adapter->get_id(),
 			'multilingual'       => $provider->get_id(),
+			'priority'           => $slot['priority'] ?? null,
+			'queue_position'     => isset( $slot['queue_position'] ) ? (int) $slot['queue_position'] : null,
 		];
 	}
 

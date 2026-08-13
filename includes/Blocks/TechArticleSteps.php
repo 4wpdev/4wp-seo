@@ -5,6 +5,8 @@
 
 namespace Forwp\SeoHelper\Blocks;
 
+use Forwp\SeoHelper\Core\Release;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -39,6 +41,7 @@ final class TechArticleSteps {
 			self::BLOCK_NAME,
 			[
 				'editor_script'   => 'forwp-seo-techarticle-steps',
+				'supports'        => Release::block_inserter_supports(),
 				'render_callback' => [ $this, 'render_steps_block' ],
 			]
 		);
@@ -47,6 +50,7 @@ final class TechArticleSteps {
 			self::STEP_BLOCK_NAME,
 			[
 				'editor_script'   => 'forwp-seo-techarticle-steps',
+				'supports'        => Release::block_inserter_supports(),
 				'render_callback' => [ $this, 'render_step_block' ],
 			]
 		);

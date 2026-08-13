@@ -38,6 +38,10 @@ final class Auth {
 		return current_user_can( 'manage_options' ) || self::$token_authenticated;
 	}
 
+	public static function can_edit_priority_queue(): bool {
+		return current_user_can( 'manage_options' );
+	}
+
 	private static function has_valid_token( WP_REST_Request $request ): bool {
 		$token = self::extract_token( $request );
 		if ( '' === $token ) {

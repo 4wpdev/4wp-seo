@@ -64,4 +64,19 @@ final class YoastAdapter implements AdapterInterface {
 
 		return true;
 	}
+
+	public static function rebuild_indexable( int $post_id ): bool {
+		if ( $post_id <= 0 || ! defined( 'WPSEO_VERSION' ) || ! function_exists( 'YoastSEO' ) ) {
+			return false;
+		}
+
+		try {
+			$builder = YoastSEO()->classes->get( \Yoast\WP\SEO\Builders\Indexable_Builder::class );
+			$builder->build_for_id_and_type( $post_id, 'post' );
+
+			return true;
+		} catch ( \Throwable $e ) {
+			return false;
+		}
+	}
 }

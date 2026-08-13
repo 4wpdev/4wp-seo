@@ -61,6 +61,8 @@ function pullInventoryToSheet() {
     'seo_title',
     'meta_description',
     'focus_keyword',
+    'priority',
+    'queue_position',
     'completeness',
     'missing',
   ];
@@ -77,6 +79,8 @@ function pullInventoryToSheet() {
       item.seo_title,
       item.meta_description,
       item.focus_keyword,
+      item.priority || '',
+      item.queue_position === 0 || item.queue_position ? item.queue_position : '',
       item.completeness,
       (item.missing || []).join('|'),
     ];

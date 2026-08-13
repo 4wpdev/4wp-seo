@@ -5,6 +5,8 @@
 
 namespace Forwp\SeoHelper\Blocks;
 
+use Forwp\SeoHelper\Core\Release;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -75,6 +77,7 @@ final class TechArticleWrappers {
 				[
 					'api_version'     => 3,
 					'editor_script'   => self::SCRIPT_HANDLE,
+					'supports'        => Release::block_inserter_supports(),
 					'render_callback' => function ( array $attributes, string $content, \WP_Block $block ) use ( $class_name ): string {
 						return $this->render_wrapper( $class_name, $content, $attributes, 'section', $block );
 					},
@@ -88,6 +91,7 @@ final class TechArticleWrappers {
 			[
 				'api_version'     => 3,
 				'editor_script'   => self::SCRIPT_HANDLE,
+				'supports'        => Release::block_inserter_supports(),
 				'attributes'      => [
 					'stepNumber' => [
 						'type' => 'number',
@@ -103,6 +107,7 @@ final class TechArticleWrappers {
 			self::COMPLETION_BLOCK,
 			[
 				'api_version'     => 3,
+				'supports'        => Release::block_inserter_supports(),
 				'attributes'      => [
 					'perfect'  => [
 						'type'    => 'array',

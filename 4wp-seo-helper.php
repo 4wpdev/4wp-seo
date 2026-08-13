@@ -1,17 +1,20 @@
 <?php
 /**
  * Plugin Name: 4WP SEO Helper
- * Description: Internal SEO toolkit: TechArticle schema, SEO inventory API, GSC, LLMS.txt, cross posting.
- * Version: 0.6.0
+ * Description: SEO Inventory for WordPress — audit and prioritize SEO fields site-wide. Works with Yoast SEO and All in One SEO.
+ * Version: 1.0.0
  * Author: 4wp.dev
  * Requires PHP: 8.0
+ * Requires at least: 6.0
+ * License: GPL v2 or later
+ * Text Domain: 4wp-seo
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FORWP_SEO_HELPER_VERSION', '0.6.0' );
+define( 'FORWP_SEO_HELPER_VERSION', '1.0.0' );
 define( 'FORWP_SEO_HELPER_FILE', __FILE__ );
 define( 'FORWP_SEO_HELPER_PATH', plugin_dir_path( __FILE__ ) );
 define( 'FORWP_SEO_HELPER_URL', plugin_dir_url( __FILE__ ) );

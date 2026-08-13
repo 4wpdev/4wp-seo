@@ -1,49 +1,120 @@
-# 4wp-seo-helper
+# 4WP SEO Helper
 
-Внутрішній плагін 4wp.dev. Namespace: `Forwp\SeoHelper`.
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![WordPress 6.0+](https://img.shields.io/badge/WordPress-6.0%2B-blue.svg?style=flat-square)](https://wordpress.org/)
+[![PHP 8.0+](https://img.shields.io/badge/PHP-8.0%2B-777bb4.svg?style=flat-square)](https://www.php.net/)
 
-## Модулі
+**Site-wide SEO Inventory for WordPress.** Audit titles, meta descriptions, and completeness scores across posts and pages—then prioritize what matters with drag-and-drop P1–P3 lanes. Works alongside **Yoast SEO** and **All in One SEO**.
 
-### TechArticle (Schema.org)
-- Gutenberg wrappers: goal, context, steps, issues, **completion**
-- JSON-LD TechArticle на фронті
-- Інтеграція з `4wp-advanced-code` (softwareCode у hasPart)
-- Markup builder для імпорту контенту (`TechArticleMarkup`)
+A plugin by **[4WP](https://4wp.dev/)**
 
-### SEO Inventory (v0.4+)
-Translation-aware SEO ops шар поверх Yoast / AIOSEO.
+## Features (v1.0.0)
 
-- **Adapters:** Yoast, All in One SEO, fallback
-- **Multilingual:** Polylang, WPML, single-language
-- **CPT:** auto-discovery (`public` + `show_ui`), без hardcode
-- **REST:** `forwp-seo-helper/v1/seo-inventory/*`
-- **Admin:** 4wp SEO → SEO Inventory (table, filters, CSV export)
-- **Sheets:** `docs/google-sheets-sync.gs`
+- **SEO Inventory table** — filters, missing-field views, CSV export, quick edit
+- **Priority queue** — P1 / P2 / P3 business tiers (names configurable in Settings)
+- **Drag-and-drop** — reorder and move items between priority groups without reload
+- **SEO plugin adapters** — Yoast SEO, All in One SEO, safe fallback
+- **Multilingual** — Polylang, WPML, or single-language sites
+- **REST API** — sync with Google Sheets or external dashboards (`docs/google-sheets-sync.gs`)
+- **Post type discovery** — public CPTs with `show_ui`; exclude via filter
 
-Контракт API: `GET /wp-json/forwp-seo-helper/v1/seo-inventory/meta`
+### Coming soon (in codebase)
 
-Auth: `Authorization: Bearer <token>` (4wp SEO → Settings) або `manage_options`.
+TechArticle schema & blocks, Google Search Console, LLMS.txt, and cross posting ship in future releases. They appear as **Coming soon** in wp-admin; code stays in the plugin for the next version.
 
-### Google Search Console
-OAuth, URL inspection, search analytics (28 days).
+## How it works
 
-### LLMS.txt
-`/llms.txt` для постів з валідним TechArticle.
+1. Activate the plugin (requires Yoast or AIOSEO for full read/write).
+2. Open **4WP SEO → SEO Inventory**.
+3. Review completeness scores and missing SEO fields site-wide.
+4. Drag rows into **P1 / P2 / P3** to mark business priority (independent of score).
+5. Optional: enable the REST API under **Settings** and connect Sheets or your dashboard.
 
-### Cross posting
-Markdown / social snippets з редактора (module toggle).
+Priority reflects **business importance** (e.g. main service pages), not SEO score—a page can stay in P1 at 100%.
 
-## Фільтри
+## Install
 
-```php
-// Виключити CPT з inventory
-add_filter( 'forwp_seo_inventory_exclude_post_types', fn( $types ) => array_merge( $types, [ 'shop_order' ] ) );
+| Source | Notes |
+|--------|--------|
+| **WordPress.org** | Search for *4WP SEO Helper* (v1.0.0 — SEO Inventory only). |
+| **From source** | Copy into `wp-content/plugins/4wp-seo-helper` and activate. |
 
-// CORS для зовнішніх клієнтів (не dashboard — окремий крок)
-add_filter( 'forwp_seo_inventory_cors_origins', fn() => [ 'https://script.google.com' ] );
+```bash
+# Example: clone into plugins (adjust remote if you use a private repo)
+cd wp-content/plugins
+git clone <your-repo-url> 4wp-seo-helper
+# Activate in wp-admin → Plugins
 ```
 
-## Поза scope v0.5
+On activation, the inventory API token is created and the module is enabled by default.
 
-- `4wp-analytics-dashboard` UI — окремий репозиторій, не чіпаємо
-- Rename block names `forwp-seo/*` → `forwp-seo-helper/*` (breaking для post_content)
+## Requirements
+
+- WordPress **6.0+**
+- PHP **8.0+**
+- **Yoast SEO** or **All in One SEO** (recommended for inventory read/write)
+
+## Admin
+
+| Screen | Path |
+|--------|------|
+| Overview & settings | **4WP SEO** |
+| Inventory table | **4WP SEO → SEO Inventory** |
+| Inventory API | **4WP SEO → Inventory API** |
+
+## REST API
+
+Base URL: `/wp-json/forwp-seo-helper/v1/seo-inventory`
+
+| Route | Description |
+|-------|-------------|
+| `GET /meta` | API contract, fields, version |
+| `GET /items` | Paginated inventory (Bearer token or `manage_options`) |
+| `PUT /priority-queue` | Save P1–P3 lane order (logged-in admin) |
+
+Auth header: `Authorization: Bearer <token>` — token under **4WP SEO → Inventory API**.
+
+Sample Google Apps Script: [`docs/google-sheets-sync.gs`](docs/google-sheets-sync.gs).
+
+## For developers
+
+- **Namespace:** `Forwp\SeoHelper`
+- **Text domain:** `4wp-seo`
+- **Release scope:** `includes/Core/Release.php` — public modules for wp.org 1.0.0 are `inventory` and `inventory_api` only.
+
+### Enable all modules (staging / internal)
+
+```php
+add_filter( 'forwp_seo_public_modules', function () {
+	return [
+		\Forwp\SeoHelper\Core\Release::MODULE_INVENTORY,
+		\Forwp\SeoHelper\Core\Release::MODULE_INVENTORY_API,
+		\Forwp\SeoHelper\Core\Release::MODULE_TECHARTICLE,
+		\Forwp\SeoHelper\Core\Release::MODULE_GSC,
+		\Forwp\SeoHelper\Core\Release::MODULE_LLMS,
+		\Forwp\SeoHelper\Core\Release::MODULE_CROSSPOSTING,
+	];
+} );
+```
+
+For the next public release, expand `Release::WPORG_1_0_0_MODULES` instead of relying on the filter.
+
+### Filters
+
+```php
+// Exclude post types from inventory
+add_filter(
+	'forwp_seo_inventory_exclude_post_types',
+	fn( array $types ) => array_merge( $types, [ 'shop_order' ] )
+);
+
+// CORS for external clients (e.g. Google Apps Script)
+add_filter(
+	'forwp_seo_inventory_cors_origins',
+	fn() => [ 'https://script.google.com' ]
+);
+```
+
+## License
+
+GPL v2 or later. See the plugin header in [`4wp-seo-helper.php`](4wp-seo-helper.php).

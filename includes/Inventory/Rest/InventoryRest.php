@@ -8,9 +8,11 @@ namespace Forwp\SeoHelper\Inventory\Rest;
 use Forwp\SeoHelper\Inventory\BulkUpdater;
 use Forwp\SeoHelper\Inventory\Module;
 use Forwp\SeoHelper\Inventory\PostTypeDiscovery;
+use Forwp\SeoHelper\Inventory\PriorityQueue;
 use Forwp\SeoHelper\Inventory\Repository;
 use Forwp\SeoHelper\Multilingual\Registry as MultilingualRegistry;
 use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
+use Forwp\SeoHelper\SeoMeta\YoastAdapter;
 use WP_REST_Request;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,6 +24,7 @@ final class InventoryRest {
 
 	private Repository $repository;
 	private BulkUpdater $bulk_updater;
+	private PriorityQueue $priority_queue;
 
 	public static function get_instance(): self {
 		if ( null === self::$instance ) {
@@ -31,8 +34,9 @@ final class InventoryRest {
 	}
 
 	private function __construct() {
-		$this->repository   = new Repository();
-		$this->bulk_updater = new BulkUpdater( $this->repository );
+		$this->repository      = new Repository();
+		$this->bulk_updater    = new BulkUpdater( $this->repository );
+		$this->priority_queue  = new PriorityQueue( $this->repository );
 		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
 	}
 
@@ -119,6 +123,39 @@ final class InventoryRest {
 							'required' => true,
 						],
 					],
+				],
+			]
+		);
+
+		register_rest_route(
+			'forwp-seo-helper/v1',
+			'/seo-inventory/priority-queue/(?P<post_id>\d+)',
+			[
+				'methods'             => 'PATCH',
+				'callback'            => [ $this, 'assign_priority' ],
+				'permission_callback' => [ Auth::class, 'can_edit_priority_queue' ],
+				'args'                => [
+					'post_id' => [
+						'type'     => 'integer',
+						'required' => true,
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			'forwp-seo-helper/v1',
+			'/seo-inventory/priority-queue',
+			[
+				[
+					'methods'             => 'GET',
+					'callback'            => [ $this, 'get_priority_queue' ],
+					'permission_callback' => [ Auth::class, 'can_access' ],
+				],
+				[
+					'methods'             => 'PUT',
+					'callback'            => [ $this, 'update_priority_queue' ],
+					'permission_callback' => [ Auth::class, 'can_edit_priority_queue' ],
 				],
 			]
 		);
@@ -250,6 +287,10 @@ final class InventoryRest {
 			);
 		}
 
+		if ( $this->is_quick_edit_request( $request ) && 'yoast' === SeoMetaRegistry::get_active()->get_id() ) {
+			YoastAdapter::rebuild_indexable( $post_id );
+		}
+
 		return [
 			'meta'   => $this->build_response_meta(),
 			'item'   => $this->repository->get_record( $post_id ),
@@ -271,6 +312,70 @@ final class InventoryRest {
 			'meta'    => $this->build_response_meta(),
 			'updated' => $result['updated'],
 			'errors'  => $result['errors'],
+		];
+	}
+
+	public function get_priority_queue() {
+		if ( ! Module::get_instance()->is_enabled() ) {
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+		}
+
+		return [
+			'meta' => $this->build_response_meta(),
+			'data' => $this->priority_queue->get_lanes_with_items(),
+		];
+	}
+
+	public function update_priority_queue( WP_REST_Request $request ) {
+		if ( ! Module::get_instance()->is_enabled() ) {
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+		}
+
+		$params = $request->get_json_params();
+		$lanes  = is_array( $params['lanes'] ?? null ) ? $params['lanes'] : null;
+
+		if ( null === $lanes ) {
+			return new \WP_Error( 'invalid_lanes', __( 'Lanes object is required.', '4wp-seo' ), [ 'status' => 400 ] );
+		}
+
+		$saved = $this->priority_queue->set_lanes( $lanes );
+		PriorityQueue::reset_cache();
+
+		return [
+			'meta'  => $this->build_response_meta(),
+			'lanes' => $saved,
+			'data'  => $this->priority_queue->get_lanes_with_items(),
+		];
+	}
+
+	public function assign_priority( WP_REST_Request $request ) {
+		if ( ! Module::get_instance()->is_enabled() ) {
+			return new \WP_Error( 'inventory_disabled', __( 'SEO inventory is disabled.', '4wp-seo' ), [ 'status' => 403 ] );
+		}
+
+		$post_id = (int) $request->get_param( 'post_id' );
+		if ( null === $this->repository->get_record( $post_id ) ) {
+			return new \WP_Error( 'not_found', __( 'Record not found.', '4wp-seo' ), [ 'status' => 404 ] );
+		}
+
+		$params   = $request->get_json_params();
+		$priority = array_key_exists( 'priority', $params ) ? $params['priority'] : null;
+
+		if ( null === $priority || '' === $priority ) {
+			$priority_value = null;
+		} else {
+			$priority_value = (int) $priority;
+			if ( $priority_value < 1 || $priority_value > 3 ) {
+				return new \WP_Error( 'invalid_priority', __( 'Priority must be 1, 2, 3, or empty.', '4wp-seo' ), [ 'status' => 400 ] );
+			}
+		}
+
+		$this->priority_queue->assign_post( $post_id, $priority_value );
+		PriorityQueue::reset_cache();
+
+		return [
+			'meta' => $this->build_response_meta(),
+			'item' => $this->repository->get_record( $post_id ),
 		];
 	}
 
@@ -298,11 +403,12 @@ final class InventoryRest {
 				'header' => 'Authorization: Bearer <token>',
 			],
 			'endpoints'          => [
-				'list'   => $base,
-				'stats'  => $base . '/stats',
-				'export' => $base . '/export',
-				'bulk'   => $base . '/bulk',
-				'meta'   => $base . '/meta',
+				'list'           => $base,
+				'stats'          => $base . '/stats',
+				'export'         => $base . '/export',
+				'bulk'           => $base . '/bulk',
+				'meta'           => $base . '/meta',
+				'priority_queue' => $base . '/priority-queue',
 			],
 			'writable_fields'    => [
 				'seo_title',
@@ -372,6 +478,8 @@ final class InventoryRest {
 			'seo_title',
 			'meta_description',
 			'focus_keyword',
+			'priority',
+			'queue_position',
 			'completeness',
 			'missing',
 		];
@@ -395,6 +503,10 @@ final class InventoryRest {
 		$response->header( 'Content-Disposition', 'attachment; filename="seo-inventory.csv"' );
 
 		return $response;
+	}
+
+	private function is_quick_edit_request( WP_REST_Request $request ): bool {
+		return 'quick-edit' === strtolower( (string) $request->get_header( 'x_forwp_seo_context' ) );
 	}
 
 	private function csv_escape( string $value ): string {

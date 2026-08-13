@@ -51,6 +51,8 @@ final class InventoryExport {
 			'seo_title',
 			'meta_description',
 			'focus_keyword',
+			'priority',
+			'queue_position',
 			'completeness',
 			'missing',
 		];

@@ -270,6 +270,7 @@
 			headers: {
 				'Content-Type': 'application/json',
 				'X-WP-Nonce': cfg.nonce,
+				'X-Forwp-Seo-Context': 'quick-edit',
 			},
 			body: JSON.stringify( payload ),
 			credentials: 'same-origin',

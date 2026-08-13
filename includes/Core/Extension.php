@@ -38,8 +38,10 @@ final class Extension {
 	private function init(): void {
 		add_action( 'init', [ $this, 'load_textdomain' ] );
 		add_action( 'init', [ $this, 'register_post_meta' ] );
-		add_action( 'add_meta_boxes', [ $this, 'register_meta_boxes' ] );
-		add_action( 'save_post', [ $this, 'save_post_meta' ] );
+		if ( Release::is_module_public( Release::MODULE_TECHARTICLE ) ) {
+			add_action( 'add_meta_boxes', [ $this, 'register_meta_boxes' ] );
+			add_action( 'save_post', [ $this, 'save_post_meta' ] );
+		}
 
 		TechArticle::get_instance();
 		TechArticleRest::get_instance();
@@ -52,7 +54,9 @@ final class Extension {
 
 		if ( is_admin() ) {
 			Menu::get_instance();
-			Editor::get_instance();
+			if ( Release::is_module_public( Release::MODULE_TECHARTICLE ) || Release::is_module_public( Release::MODULE_CROSSPOSTING ) ) {
+				Editor::get_instance();
+			}
 			Notices::get_instance();
 		}
 	}
