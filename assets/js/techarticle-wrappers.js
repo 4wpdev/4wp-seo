@@ -23,7 +23,7 @@
 			category: 'forwp-seo-techarticle',
 			description: __(
 				'TechArticle section wrapper. Add any blocks inside; used for Schema.org markup.',
-				'4wp-seo'
+				'4wp-seo-helper'
 			),
 			attributes,
 			supports: {
@@ -46,49 +46,49 @@
 
 	if ( wp.blocks && wp.blocks.registerBlockCategory ) {
 		wp.blocks.registerBlockCategory( 'forwp-seo-techarticle', {
-			title: __( 'TechArticle', '4wp-seo' ),
+			title: __( 'TechArticle', '4wp-seo-helper' ),
 		} );
 	} else if ( wp.blocks && wp.blocks.setCategories ) {
 		const cats = wp.blocks.getCategories ? wp.blocks.getCategories() : [];
 		if ( ! cats.some( ( c ) => c.slug === 'forwp-seo-techarticle' ) ) {
 			wp.blocks.setCategories( [
 				...cats,
-				{ slug: 'forwp-seo-techarticle', title: __( 'TechArticle', '4wp-seo' ) },
+				{ slug: 'forwp-seo-techarticle', title: __( 'TechArticle', '4wp-seo-helper' ) },
 			] );
 		}
 	}
 
 	registerWrapper(
 		'forwp-seo/techarticle-goal',
-		__( 'TechArticle Goal', '4wp-seo' ),
+		__( 'TechArticle Goal', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-goal',
 		'flag'
 	);
 
 	registerWrapper(
 		'forwp-seo/techarticle-context',
-		__( 'TechArticle Context', '4wp-seo' ),
+		__( 'TechArticle Context', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-context',
 		'text-page'
 	);
 
 	registerWrapper(
 		'forwp-seo/techarticle-issues',
-		__( 'TechArticle Common Mistakes', '4wp-seo' ),
+		__( 'TechArticle Common Mistakes', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-issues',
 		'warning'
 	);
 
 	registerWrapper(
 		'forwp-seo/techarticle-steps',
-		__( 'TechArticle Steps', '4wp-seo' ),
+		__( 'TechArticle Steps', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-steps',
 		'editor-ol'
 	);
 
 	registerWrapper(
 		'forwp-seo/techarticle-step',
-		__( 'TechArticle Step', '4wp-seo' ),
+		__( 'TechArticle Step', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-step',
 		'marker',
 		{

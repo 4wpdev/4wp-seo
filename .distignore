@@ -1,0 +1,15 @@
+# Development-only — omit from WordPress.org ZIP / SVN trunk.
+.git/
+.gitignore
+.gitattributes
+
+README.md
+docs/
+scripts/
+.editorconfig
+.phpcs.xml
+.phpcs.xml.dist
+phpcs.xml
+.phpcs.cache
+.distignore
+.releases/

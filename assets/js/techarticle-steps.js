@@ -8,10 +8,10 @@
 	const { useBlockProps, InnerBlocks } = wp.blockEditor;
 
 	const STEP_TEMPLATE = [
-		[ 'core/heading', { level: 3, placeholder: __( 'Step title', '4wp-seo' ) } ],
-		[ 'core/paragraph', { placeholder: __( 'Short description', '4wp-seo' ) } ],
-		[ 'core/code', { placeholder: __( 'Command', '4wp-seo' ) } ],
-		[ 'core/paragraph', { placeholder: __( 'Explanation', '4wp-seo' ) } ],
+		[ 'core/heading', { level: 3, placeholder: __( 'Step title', '4wp-seo-helper' ) } ],
+		[ 'core/paragraph', { placeholder: __( 'Short description', '4wp-seo-helper' ) } ],
+		[ 'core/code', { placeholder: __( 'Command', '4wp-seo-helper' ) } ],
+		[ 'core/paragraph', { placeholder: __( 'Explanation', '4wp-seo-helper' ) } ],
 	];
 
 	const STEPS_TEMPLATE = [
@@ -19,7 +19,7 @@
 	];
 
 	registerBlockType( 'forwp-seo/techarticle-steps', {
-		title: __( 'TechArticle Steps', '4wp-seo' ),
+		title: __( 'TechArticle Steps', '4wp-seo-helper' ),
 		icon: 'editor-ol',
 		category: 'widgets',
 		edit: ( { attributes, setAttributes } ) => {
@@ -34,7 +34,7 @@
 	} );
 
 	registerBlockType( 'forwp-seo/techarticle-step', {
-		title: __( 'TechArticle Step', '4wp-seo' ),
+		title: __( 'TechArticle Step', '4wp-seo-helper' ),
 		icon: 'editor-ol',
 		category: 'widgets',
 		parent: [ 'forwp-seo/techarticle-steps' ],

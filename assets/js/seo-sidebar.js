@@ -254,7 +254,7 @@
 
 		const fetchContent = async ( nextPlatform ) => {
 			if ( ! postId ) {
-				setError( __( 'Save the post before generating content.', '4wp-seo' ) );
+				setError( __( 'Save the post before generating content.', '4wp-seo-helper' ) );
 				return;
 			}
 
@@ -273,7 +273,7 @@
 				setContent( response.content || '' );
 				setPlatform( nextPlatform );
 			} catch ( err ) {
-				setError( err?.message || __( 'Failed to generate content.', '4wp-seo' ) );
+				setError( err?.message || __( 'Failed to generate content.', '4wp-seo-helper' ) );
 			} finally {
 				setLoading( false );
 			}
@@ -286,7 +286,7 @@
 			try {
 				await navigator.clipboard.writeText( content );
 			} catch ( err ) {
-				setError( __( 'Copy failed. Try manual copy.', '4wp-seo' ) );
+				setError( __( 'Copy failed. Try manual copy.', '4wp-seo-helper' ) );
 			}
 		};
 
@@ -354,15 +354,15 @@
 				Notice,
 				{ status: 'success', isDismissible: false },
 				serverTechArticle?.source === 'practice_case_sections'
-					? __( 'TechArticle is ready from practice case section meta. JSON-LD will be added to the page.', '4wp-seo' )
-					: __( 'TechArticle is ready. JSON-LD will be added to the page.', '4wp-seo' )
+					? __( 'TechArticle is ready from practice case section meta. JSON-LD will be added to the page.', '4wp-seo-helper' )
+					: __( 'TechArticle is ready. JSON-LD will be added to the page.', '4wp-seo-helper' )
 			)
 			: el(
 				Notice,
 				{ status: 'warning', isDismissible: false },
 				postType === 'practice_case'
-					? __( 'Missing steps/commands in practice case section meta. JSON-LD will not be added.', '4wp-seo' )
-					: __( 'Missing required blocks. JSON-LD will not be added.', '4wp-seo' )
+					? __( 'Missing steps/commands in practice case section meta. JSON-LD will not be added.', '4wp-seo-helper' )
+					: __( 'Missing required blocks. JSON-LD will not be added.', '4wp-seo-helper' )
 			);
 
 		const statusList = postType === 'practice_case'
@@ -373,7 +373,7 @@
 					'li',
 					null,
 					( serverTechArticle?.valid ? '✅ ' : '⚠️ ' ) +
-						__( 'Practice case section meta (steps + commands)', '4wp-seo' )
+						__( 'Practice case section meta (steps + commands)', '4wp-seo-helper' )
 				)
 			)
 			: el(
@@ -382,12 +382,12 @@
 				el(
 					'li',
 					null,
-					( hasCode ? '✅ ' : '⚠️ ' ) + __( 'Core Code block', '4wp-seo' )
+					( hasCode ? '✅ ' : '⚠️ ' ) + __( 'Core Code block', '4wp-seo-helper' )
 				),
 				el(
 					'li',
 					null,
-					( hasSteps ? '✅ ' : '⚠️ ' ) + __( 'TechArticle Steps block', '4wp-seo' )
+					( hasSteps ? '✅ ' : '⚠️ ' ) + __( 'TechArticle Steps block', '4wp-seo-helper' )
 				)
 			);
 
@@ -398,12 +398,12 @@
 				el(
 					Notice,
 					{ status: 'warning', isDismissible: false },
-					__( 'Invalid blocks detected. Click to repair.', '4wp-seo' )
+					__( 'Invalid blocks detected. Click to repair.', '4wp-seo-helper' )
 				),
 				el(
 					Button,
 					{ variant: 'secondary', onClick: repairInvalidBlocks },
-					__( 'Repair invalid blocks', '4wp-seo' )
+					__( 'Repair invalid blocks', '4wp-seo-helper' )
 				)
 			)
 			: null;
@@ -436,7 +436,7 @@
 					target: '_blank',
 					rel: 'noopener noreferrer',
 				},
-				__( 'Validate Schema.org', '4wp-seo' )
+				__( 'Validate Schema.org', '4wp-seo-helper' )
 			),
 			el(
 				Button,
@@ -448,7 +448,7 @@
 					target: '_blank',
 					rel: 'noopener noreferrer',
 				},
-				__( 'Google Rich Results Test', '4wp-seo' )
+				__( 'Google Rich Results Test', '4wp-seo-helper' )
 			)
 		);
 
@@ -496,7 +496,7 @@
 				'div',
 				{ style: { marginTop: '12px' } },
 				el( TextareaControl, {
-					label: __( 'Copy-ready content', '4wp-seo' ),
+					label: __( 'Copy-ready content', '4wp-seo-helper' ),
 					value: content,
 					readOnly: true,
 					rows: 10,
@@ -504,7 +504,7 @@
 				el(
 					Button,
 					{ variant: 'primary', onClick: copyToClipboard },
-					__( 'Copy', '4wp-seo' )
+					__( 'Copy', '4wp-seo-helper' )
 				)
 			)
 			: null;
@@ -515,7 +515,7 @@
 				el(
 					'p',
 					null,
-					__( 'Cross posting module is disabled. Enable it in 4wp SEO settings.', '4wp-seo' )
+					__( 'Cross posting module is disabled. Enable it in 4wp SEO settings.', '4wp-seo-helper' )
 				),
 			];
 
@@ -525,36 +525,36 @@
 			el(
 				PluginSidebarMoreMenuItem,
 				{ target: 'forwp-seo-sidebar', icon: chartBar || undefined },
-				__( '4wp SEO', '4wp-seo' )
+				__( '4wp SEO', '4wp-seo-helper' )
 			),
 			el(
 				PluginSidebar,
-				{ name: 'forwp-seo-sidebar', title: __( '4wp SEO', '4wp-seo' ), icon: chartBar || undefined },
+				{ name: 'forwp-seo-sidebar', title: __( '4wp SEO', '4wp-seo-helper' ), icon: chartBar || undefined },
 				el(
 					PanelBody,
-					{ title: __( 'Schema.org (TechArticle)', '4wp-seo' ), initialOpen: true },
+					{ title: __( 'Schema.org (TechArticle)', '4wp-seo-helper' ), initialOpen: true },
 					statusNotice,
 					statusList,
 					repairBlock
 				),
 				el(
 					PanelBody,
-					{ title: __( 'JSON-LD Preview', '4wp-seo' ), initialOpen: false },
+					{ title: __( 'JSON-LD Preview', '4wp-seo-helper' ), initialOpen: false },
 					jsonPreviewBlock
 				),
 				el(
 					PanelBody,
-					{ title: __( 'Validation Tools', '4wp-seo' ), initialOpen: false },
+					{ title: __( 'Validation Tools', '4wp-seo-helper' ), initialOpen: false },
 					validationButtons
 				),
 				el(
 					PanelBody,
-					{ title: __( 'LLMS.txt Preview', '4wp-seo' ), initialOpen: false },
+					{ title: __( 'LLMS.txt Preview', '4wp-seo-helper' ), initialOpen: false },
 					llmsPreviewBlock
 				),
 				el(
 					PanelBody,
-					{ title: __( 'Cross posting', '4wp-seo' ), initialOpen: true },
+					{ title: __( 'Cross posting', '4wp-seo-helper' ), initialOpen: true },
 					...crosspostingBody
 				)
 			)

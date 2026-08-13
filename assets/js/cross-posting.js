@@ -32,16 +32,16 @@
 			return (
 				<PluginDocumentSettingPanel
 				name="forwp-seo-crossposting"
-					title={ __( 'Cross posting', '4wp-seo' ) }
+					title={ __( 'Cross posting', '4wp-seo-helper' ) }
 				>
-					<p>{ __( 'Cross posting module is disabled. Enable it in 4wp SEO settings.', '4wp-seo' ) }</p>
+					<p>{ __( 'Cross posting module is disabled. Enable it in 4wp SEO settings.', '4wp-seo-helper' ) }</p>
 				</PluginDocumentSettingPanel>
 			);
 		}
 
 		const fetchContent = async ( nextPlatform ) => {
 			if ( ! postId ) {
-				setError( __( 'Save the post before generating content.', '4wp-seo' ) );
+				setError( __( 'Save the post before generating content.', '4wp-seo-helper' ) );
 				return;
 			}
 
@@ -60,7 +60,7 @@
 				setContent( response.content || '' );
 				setPlatform( nextPlatform );
 			} catch ( err ) {
-				setError( err?.message || __( 'Failed to generate content.', '4wp-seo' ) );
+				setError( err?.message || __( 'Failed to generate content.', '4wp-seo-helper' ) );
 			} finally {
 				setLoading( false );
 			}
@@ -73,16 +73,16 @@
 			try {
 				await navigator.clipboard.writeText( content );
 			} catch ( err ) {
-				setError( __( 'Copy failed. Try manual copy.', '4wp-seo' ) );
+				setError( __( 'Copy failed. Try manual copy.', '4wp-seo-helper' ) );
 			}
 		};
 
 		return (
 			<PluginDocumentSettingPanel
 				name="forwp-seo-crossposting"
-				title={ __( 'Cross posting', '4wp-seo' ) }
+				title={ __( 'Cross posting', '4wp-seo-helper' ) }
 				name="forwp-seo-crossposting"
-				title={ __( 'Cross posting', '4wp-seo' ) }
+				title={ __( 'Cross posting', '4wp-seo-helper' ) }
 			>
 				<div style={ { display: 'flex', flexDirection: 'column', gap: '8px' } }>
 					{ PLATFORMS.map( ( item ) => (
@@ -107,13 +107,13 @@
 				{ content && (
 					<div style={ { marginTop: '12px' } }>
 						<TextareaControl
-							label={ __( 'Copy-ready content', '4wp-seo' ) }
+							label={ __( 'Copy-ready content', '4wp-seo-helper' ) }
 							value={ content }
 							onChange={ () => {} }
 							rows={ 10 }
 						/>
 						<Button variant="primary" onClick={ copyToClipboard }>
-							{ __( 'Copy', '4wp-seo' ) }
+							{ __( 'Copy', '4wp-seo-helper' ) }
 						</Button>
 					</div>
 				) }

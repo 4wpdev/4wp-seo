@@ -28,14 +28,14 @@
 
 	registerSectionBlock(
 		'forwp-seo/techarticle-goal',
-		__( 'TechArticle Goal', '4wp-seo' ),
+		__( 'TechArticle Goal', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-goal',
 		[
 			[
 				'core/heading',
 				{
 					level: 2,
-					content: __( 'Goal', '4wp-seo' ),
+					content: __( 'Goal', '4wp-seo-helper' ),
 				},
 			],
 			[
@@ -43,7 +43,7 @@
 				{
 					placeholder: __(
 						'What should the learner accomplish in this scenario?',
-						'4wp-seo'
+						'4wp-seo-helper'
 					),
 				},
 			],
@@ -52,14 +52,14 @@
 
 	registerSectionBlock(
 		'forwp-seo/techarticle-context',
-		__( 'TechArticle Context', '4wp-seo' ),
+		__( 'TechArticle Context', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-context',
 		[
 			[
 				'core/heading',
 				{
 					level: 2,
-					content: __( 'Context', '4wp-seo' ),
+					content: __( 'Context', '4wp-seo-helper' ),
 				},
 			],
 			[
@@ -67,7 +67,7 @@
 				{
 					placeholder: __(
 						'When and why this workflow matters.',
-						'4wp-seo'
+						'4wp-seo-helper'
 					),
 				},
 			],
@@ -76,20 +76,20 @@
 
 	registerSectionBlock(
 		'forwp-seo/techarticle-issues',
-		__( 'TechArticle Common Mistakes', '4wp-seo' ),
+		__( 'TechArticle Common Mistakes', '4wp-seo-helper' ),
 		'forwp-seo-techarticle-issues',
 		[
 			[
 				'core/heading',
 				{
 					level: 2,
-					content: __( 'Common mistakes', '4wp-seo' ),
+					content: __( 'Common mistakes', '4wp-seo-helper' ),
 				},
 			],
 			[
 				'core/list',
 				{
-					placeholder: __( 'Typical errors and how to avoid them.', '4wp-seo' ),
+					placeholder: __( 'Typical errors and how to avoid them.', '4wp-seo-helper' ),
 				},
 			],
 		]

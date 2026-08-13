@@ -43,17 +43,17 @@
 		return (
 			<PluginDocumentSettingPanel
 				name="forwp-seo-status"
-				title={ __( '4wp SEO Status', '4wp-seo' ) }
+				title={ __( '4wp SEO Status', '4wp-seo-helper' ) }
 				className="forwp-seo-status-panel"
 			>
 				<ul style={ { margin: 0, paddingLeft: '18px' } }>
 					<li>
 						{ hasCode ? '✅ ' : '⚠️ ' }
-						{ __( 'Core Code block', '4wp-seo' ) }
+						{ __( 'Core Code block', '4wp-seo-helper' ) }
 					</li>
 					<li>
 						{ hasSteps ? '✅ ' : '⚠️ ' }
-						{ __( 'TechArticle Steps block', '4wp-seo' ) }
+						{ __( 'TechArticle Steps block', '4wp-seo-helper' ) }
 					</li>
 				</ul>
 			</PluginDocumentSettingPanel>
