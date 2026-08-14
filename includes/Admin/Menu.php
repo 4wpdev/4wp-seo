@@ -20,6 +20,9 @@ final class Menu {
 
 	private static $instance = null;
 
+	/** @var string|null Return value from add_submenu_page() — used for load-* / hook_suffix. */
+	private static $inventory_page_hook = null;
+
 	public static function get_instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -30,7 +33,6 @@ final class Menu {
 	private function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
-		add_action( 'load-' . self::PAGE_SLUG . '_page_' . self::INVENTORY_PAGE_SLUG, [ $this, 'inventory_screen_options' ] );
 		add_filter(
 			'set_screen_option_' . self::INVENTORY_PER_PAGE_OPTION,
 			static function ( $screen_option, $option, $value ) {
@@ -53,7 +55,7 @@ final class Menu {
 			30
 		);
 
-		add_submenu_page(
+		self::$inventory_page_hook = add_submenu_page(
 			self::PAGE_SLUG,
 			__( 'SEO Inventory', '4wp-seo-helper' ),
 			__( 'SEO Inventory', '4wp-seo-helper' ),
@@ -61,28 +63,35 @@ final class Menu {
 			self::INVENTORY_PAGE_SLUG,
 			[ InventoryPage::class, 'render' ]
 		);
+
+		if ( is_string( self::$inventory_page_hook ) && '' !== self::$inventory_page_hook ) {
+			add_action( 'load-' . self::$inventory_page_hook, [ $this, 'inventory_screen_options' ] );
+		}
 	}
 
 	public function enqueue_admin_assets( string $hook_suffix ): void {
-		if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook_suffix ) {
+		if ( 'toplevel_page_' . self::PAGE_SLUG === $hook_suffix ) {
+			wp_enqueue_style( 'wp-components' );
+			wp_enqueue_style(
+				'forwp-seo-admin-settings',
+				FORWP_SEO_HELPER_URL . 'assets/css/admin-settings.css',
+				[ 'wp-components' ],
+				FORWP_SEO_HELPER_VERSION
+			);
+
+			wp_enqueue_script(
+				'forwp-seo-admin-tabs',
+				FORWP_SEO_HELPER_URL . 'assets/js/admin-tabs.js',
+				[],
+				FORWP_SEO_HELPER_VERSION,
+				true
+			);
 			return;
 		}
 
-		wp_enqueue_style( 'wp-components' );
-		wp_enqueue_style(
-			'forwp-seo-admin-settings',
-			FORWP_SEO_HELPER_URL . 'assets/css/admin-settings.css',
-			[ 'wp-components' ],
-			FORWP_SEO_HELPER_VERSION
-		);
-
-		wp_enqueue_script(
-			'forwp-seo-admin-tabs',
-			FORWP_SEO_HELPER_URL . 'assets/js/admin-tabs.js',
-			[],
-			FORWP_SEO_HELPER_VERSION,
-			true
-		);
+		if ( is_string( self::$inventory_page_hook ) && self::$inventory_page_hook === $hook_suffix ) {
+			$this->enqueue_inventory_assets();
+		}
 	}
 
 	public function inventory_screen_options(): void {
@@ -94,8 +103,6 @@ final class Menu {
 				'option'  => self::INVENTORY_PER_PAGE_OPTION,
 			]
 		);
-
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_inventory_assets' ] );
 	}
 
 	public function enqueue_inventory_assets(): void {
