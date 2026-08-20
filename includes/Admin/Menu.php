@@ -122,6 +122,14 @@ final class Menu {
 			[ Page::class, 'render' ]
 		);
 
+		if ( is_string( self::$gsc_page_hook ) && '' !== self::$gsc_page_hook ) {
+			add_action( 'load-' . self::$gsc_page_hook, [ GscPage::class, 'handle_load' ] );
+		}
+
+		if ( is_string( self::$settings_page_hook ) && '' !== self::$settings_page_hook ) {
+			add_action( 'load-' . self::$settings_page_hook, [ Page::class, 'handle_load' ] );
+		}
+
 		if ( is_string( self::$inventory_page_hook ) && '' !== self::$inventory_page_hook ) {
 			add_action( 'load-' . self::$inventory_page_hook, [ $this, 'inventory_screen_options' ] );
 		}
