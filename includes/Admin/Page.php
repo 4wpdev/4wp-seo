@@ -46,7 +46,10 @@ final class Page {
 		return $tabs;
 	}
 
-	public static function render(): void {
+	/**
+	 * Handle Settings POST and redirects before any admin HTML is sent.
+	 */
+	public static function handle_load(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -58,6 +61,12 @@ final class Page {
 		}
 
 		self::handle_settings_post();
+	}
+
+	public static function render(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
 
 		$tab = self::get_active_tab();
 
@@ -560,6 +569,8 @@ final class Page {
 					echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Search Console property saved.', '4wp-seo-helper' ) . '</p></div>';
 				} elseif ( 'credentials' === $gsc_saved ) {
 					echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Search Console credentials saved.', '4wp-seo-helper' ) . '</p></div>';
+				} elseif ( 'redirect' === $gsc_saved ) {
+					echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'OAuth redirect saved.', '4wp-seo-helper' ) . '</p></div>';
 				}
 			}
 			if ( isset( $_GET['data_cleared'] ) && '1' === (string) wp_unslash( $_GET['data_cleared'] ) ) {

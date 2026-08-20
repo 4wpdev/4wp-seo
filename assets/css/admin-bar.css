@@ -1,0 +1,47 @@
+#wpadminbar .forwp-seo-ab-dot {
+	background: #888;
+	border-radius: 50%;
+	display: inline-block;
+	height: 12px;
+	margin: 9px 4px 0 0;
+	vertical-align: top;
+	width: 12px;
+}
+
+#wpadminbar .forwp-seo-admin-bar-root .forwp-seo-ab-dot {
+	margin-top: 10px;
+}
+
+#wpadminbar .forwp-seo-ab-dot--good {
+	background: #7ad03a;
+}
+
+#wpadminbar .forwp-seo-ab-dot--ok {
+	background: #ee7c1b;
+}
+
+#wpadminbar .forwp-seo-ab-dot--bad {
+	background: #dc3232;
+}
+
+#wpadminbar .forwp-seo-ab-dot--na {
+	background: #888;
+}
+
+#wpadminbar .forwp-seo-ab-label {
+	margin-right: 8px;
+}
+
+#wpadminbar .forwp-seo-ab-value {
+	opacity: 0.85;
+}
+
+#wpadminbar .forwp-seo-admin-bar-root .ab-icon {
+	margin-right: 2px;
+}
+
+@media screen and (max-width: 782px) {
+	#wpadminbar .forwp-seo-admin-bar-root .forwp-seo-ab-dot {
+		margin-top: 16px;
+	}
+}

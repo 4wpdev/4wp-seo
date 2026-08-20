@@ -71,9 +71,25 @@
 		} );
 	}
 
+	function initUseSuggestedRedirect() {
+		var btn = document.getElementById( 'forwp-seo-gsc-use-suggested-redirect' );
+		var input = document.getElementById( 'forwp_seo_gsc_redirect_uri' );
+		if ( ! btn || ! input ) {
+			return;
+		}
+
+		btn.addEventListener( 'click', function () {
+			var uri = btn.getAttribute( 'data-uri' ) || '';
+			if ( uri ) {
+				input.value = uri;
+			}
+		} );
+	}
+
 	function initTabs() {
 		document.querySelectorAll( '.forwp-seo-tab-panel' ).forEach( initTabPanel );
 		initGscRangeBar();
+		initUseSuggestedRedirect();
 	}
 
 	document.addEventListener( 'DOMContentLoaded', initTabs );

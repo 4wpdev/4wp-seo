@@ -53,6 +53,64 @@ final class PropertyResolver {
 		return $best_score > 0 ? $best : null;
 	}
 
+	/**
+	 * Rewrite a local/staging permalink onto the selected GSC property host.
+	 */
+	public static function rewrite_url_for_property( string $url, string $site ): string {
+		$url  = trim( $url );
+		$site = trim( $site );
+		if ( '' === $url || '' === $site || str_starts_with( $site, 'sc-domain:' ) ) {
+			return $url;
+		}
+
+		$parts = wp_parse_url( $url );
+		$prop  = wp_parse_url( $site );
+		if ( ! is_array( $parts ) || ! is_array( $prop ) || empty( $prop['host'] ) ) {
+			return $url;
+		}
+
+		$scheme = isset( $prop['scheme'] ) ? (string) $prop['scheme'] : 'https';
+		$host   = (string) $prop['host'];
+		$port   = isset( $prop['port'] ) ? ':' . (int) $prop['port'] : '';
+		$path   = isset( $parts['path'] ) ? (string) $parts['path'] : '/';
+		$query  = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+
+		return $scheme . '://' . $host . $port . $path . $query;
+	}
+
+	/**
+	 * Google Search Console URL Inspection UI for this property + page.
+	 *
+	 * Do not use add_query_arg() here: it does not encode values, so nested
+	 * https:// URLs + `&id=` get mangled by esc_url() / HTML / the browser.
+	 */
+	public static function search_console_inspect_url( string $property, string $url ): string {
+		$property = trim( $property );
+		$url      = trim( $url );
+		if ( '' === $property || '' === $url ) {
+			return '';
+		}
+
+		return 'https://search.google.com/search-console/inspect?resource_id=' . rawurlencode( $property ) . '&id=' . rawurlencode( $url );
+	}
+
+	public static function url_belongs_to_property( string $url, string $site ): bool {
+		if ( '' === $url || '' === $site ) {
+			return false;
+		}
+
+		if ( str_starts_with( $site, 'sc-domain:' ) ) {
+			$domain = substr( $site, 10 );
+			$host   = wp_parse_url( $url, PHP_URL_HOST );
+
+			return is_string( $host ) && ( $host === $domain || str_ends_with( $host, '.' . $domain ) );
+		}
+
+		$prefix = untrailingslashit( $site );
+
+		return str_starts_with( $url, $prefix . '/' ) || $url === $prefix;
+	}
+
 	public static function url_path_key( string $url ): string {
 		$parts = wp_parse_url( $url );
 		$path  = isset( $parts['path'] ) ? (string) $parts['path'] : '/';

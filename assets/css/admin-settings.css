@@ -126,6 +126,23 @@
 	max-width: 72ch;
 }
 
+.forwp-seo-setup-steps {
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.5;
+	margin: 0 0 16px;
+	max-width: 72ch;
+	padding-left: 1.25em;
+}
+
+.forwp-seo-setup-steps li {
+	margin: 0 0 6px;
+}
+
+.forwp-seo-setup-steps li:last-child {
+	margin-bottom: 0;
+}
+
 .forwp-seo-status-grid {
 	display: grid;
 	gap: 12px;
@@ -249,6 +266,29 @@
 
 .forwp-seo-panel .description {
 	font-size: 12px;
+}
+
+.forwp-seo-panel.is-inactive .forwp-seo-oauth-inline {
+	opacity: 0.55;
+}
+
+.forwp-seo-oauth-inline {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.forwp-seo-oauth-inline input.large-text {
+	flex: 1 1 220px;
+	min-width: 0;
+}
+
+.forwp-seo-oauth-inline__btns {
+	align-items: center;
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
 }
 
 .forwp-seo-row-two {

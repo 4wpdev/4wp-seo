@@ -5,12 +5,14 @@
 
 namespace Forwp\SeoHelper\Core;
 
+use Forwp\SeoHelper\Admin\AdminBar;
 use Forwp\SeoHelper\Admin\Editor;
 use Forwp\SeoHelper\Admin\Menu;
 use Forwp\SeoHelper\Admin\Notices;
 use Forwp\SeoHelper\Blocks\TechArticleWrappers;
 use Forwp\SeoHelper\CrossPosting\Module as CrossPostingModule;
 use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\Gsc\Indexing;
 use Forwp\SeoHelper\Gsc\Module as GscModule;
 use Forwp\SeoHelper\Llms\Generator;
 use Forwp\SeoHelper\Schema\TechArticle;
@@ -52,10 +54,16 @@ final class Extension {
 		InventoryModule::get_instance();
 		GscModule::get_instance();
 		GscAdmin::get_instance(); // Must be initialized for REST API callback
+		Indexing::get_instance();
+		AdminBar::boot();
 
 		if ( is_admin() ) {
 			Menu::get_instance();
-			if ( Release::is_module_public( Release::MODULE_TECHARTICLE ) || Release::is_module_public( Release::MODULE_CROSSPOSTING ) ) {
+			if (
+				Release::is_module_public( Release::MODULE_TECHARTICLE )
+				|| Release::is_module_public( Release::MODULE_CROSSPOSTING )
+				|| Release::is_module_public( Release::MODULE_GSC )
+			) {
 				Editor::get_instance();
 			}
 			Notices::get_instance();

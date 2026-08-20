@@ -20,6 +20,7 @@ final class Menu {
 	public const PAGE_SLUG                 = 'forwp-seo';
 	public const SETTINGS_PAGE_SLUG        = 'forwp-seo-settings';
 	public const GSC_PAGE_SLUG             = 'forwp-seo-gsc';
+	public const OAUTH_PAGE_SLUG           = 'forwp-seo-gsc-oauth';
 	public const INVENTORY_PAGE_SLUG       = 'forwp-seo-inventory';
 	public const INVENTORY_PER_PAGE_OPTION = 'forwp_seo_inventory_per_page';
 
@@ -85,6 +86,17 @@ final class Menu {
 			[ InventoryPage::class, 'render' ]
 		);
 
+		if ( Release::is_module_public( Release::MODULE_GSC ) ) {
+			add_submenu_page(
+				null,
+				__( 'Google OAuth', '4wp-seo-helper' ),
+				__( 'Google OAuth', '4wp-seo-helper' ),
+				'manage_options',
+				self::OAUTH_PAGE_SLUG,
+				'__return_null'
+			);
+		}
+
 		if ( Release::is_module_public( Release::MODULE_GSC ) && GscModule::get_instance()->is_enabled() ) {
 			self::$gsc_page_hook = add_submenu_page(
 				self::PAGE_SLUG,
@@ -108,6 +120,14 @@ final class Menu {
 			self::SETTINGS_PAGE_SLUG,
 			[ Page::class, 'render' ]
 		);
+
+		if ( is_string( self::$gsc_page_hook ) && '' !== self::$gsc_page_hook ) {
+			add_action( 'load-' . self::$gsc_page_hook, [ GscPage::class, 'handle_load' ] );
+		}
+
+		if ( is_string( self::$settings_page_hook ) && '' !== self::$settings_page_hook ) {
+			add_action( 'load-' . self::$settings_page_hook, [ Page::class, 'handle_load' ] );
+		}
 
 		if ( is_string( self::$inventory_page_hook ) && '' !== self::$inventory_page_hook ) {
 			add_action( 'load-' . self::$inventory_page_hook, [ $this, 'inventory_screen_options' ] );

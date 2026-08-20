@@ -1,0 +1,130 @@
+.forwp-seo-side {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.forwp-seo-side__scores {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: 1fr 1fr;
+}
+
+.forwp-seo-side__score {
+	align-items: center;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px 6px 8px;
+	text-align: center;
+}
+
+.forwp-seo-side__score-value {
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.03em;
+	line-height: 1;
+}
+
+.forwp-seo-side__score-label {
+	color: #646970;
+	font-size: 11px;
+	line-height: 1.3;
+}
+
+.forwp-seo-side__score--good .forwp-seo-side__score-value {
+	color: #1e7e34;
+}
+
+.forwp-seo-side__score--ok .forwp-seo-side__score-value {
+	color: #b26200;
+}
+
+.forwp-seo-side__score--bad .forwp-seo-side__score-value {
+	color: #b32d2e;
+}
+
+.forwp-seo-side__score--na .forwp-seo-side__score-value {
+	color: #646970;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.forwp-seo-side__meta {
+	color: #646970;
+	font-size: 12px;
+	line-height: 1.45;
+	margin: 0;
+}
+
+.forwp-seo-side__pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.forwp-seo-side__pill {
+	border-radius: 999px;
+	display: inline-block;
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	line-height: 1.2;
+	padding: 4px 8px;
+	text-transform: uppercase;
+}
+
+.forwp-seo-side__pill--good {
+	background: #edfaef;
+	color: #1e4620;
+}
+
+.forwp-seo-side__pill--ok {
+	background: #fff8e5;
+	color: #614400;
+}
+
+.forwp-seo-side__pill--bad {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.forwp-seo-side__rows {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+}
+
+.forwp-seo-side__row dt {
+	color: #646970;
+	font-size: 11px;
+	margin: 0;
+}
+
+.forwp-seo-side__row dd {
+	font-size: 12px;
+	line-height: 1.4;
+	margin: 2px 0 0;
+	overflow-wrap: anywhere;
+}
+
+.forwp-seo-side__row a {
+	text-decoration: none;
+}
+
+.forwp-seo-side__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.forwp-seo-side__hint {
+	color: #646970;
+	font-size: 12px;
+	line-height: 1.45;
+	margin: 0;
+}

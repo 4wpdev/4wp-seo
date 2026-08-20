@@ -220,7 +220,92 @@
 		const [ loading, setLoading ] = useState( false );
 		const [ error, setError ] = useState( '' );
 		const [ serverTechArticle, setServerTechArticle ] = useState( null );
+		const [ gscStatus, setGscStatus ] = useState( null );
+		const [ gscLoading, setGscLoading ] = useState( true );
+		const [ gscBusy, setGscBusy ] = useState( false );
 		const postType = post?.type || '';
+		const postStatus = post?.status || '';
+
+		const gscHeaders = {
+			'X-WP-Nonce': settings.nonce,
+		};
+
+		const loadGscStatus = async ( inspect ) => {
+			if ( ! postId || ! apiFetch ) {
+				return;
+			}
+			setGscLoading( true );
+			try {
+				const response = await apiFetch( {
+					path:
+						'/forwp-seo/v1/gsc/post-index?post_id=' +
+						postId +
+						( inspect ? '&inspect=1' : '' ),
+					headers: gscHeaders,
+				} );
+				setGscStatus( response );
+			} catch ( err ) {
+				setGscStatus( {
+					ok: false,
+					message: err?.message || __( 'Could not load Search Console status.', '4wp-seo-helper' ),
+				} );
+			} finally {
+				setGscLoading( false );
+			}
+		};
+
+		const gscInspectHref = ( property, pageUrl ) => {
+			if ( ! property || ! pageUrl ) {
+				return '';
+			}
+			return (
+				'https://search.google.com/search-console/inspect?resource_id=' +
+				encodeURIComponent( property ) +
+				'&id=' +
+				encodeURIComponent( pageUrl )
+			);
+		};
+
+		const requestGscIndex = async ( event ) => {
+			if ( event && event.preventDefault ) {
+				event.preventDefault();
+			}
+			if ( ! postId || ! apiFetch || ! gscStatus?.ready ) {
+				return;
+			}
+			const inspectUrl =
+				gscInspectHref( gscStatus.property, gscStatus.inspectionUrl ) ||
+				gscStatus.gscInspectUrl;
+			if ( inspectUrl ) {
+				window.open( inspectUrl, '_blank', 'noopener,noreferrer' );
+			}
+			setGscBusy( true );
+			try {
+				const response = await apiFetch( {
+					path: '/forwp-seo/v1/gsc/request-index',
+					method: 'POST',
+					headers: gscHeaders,
+					data: { post_id: postId },
+				} );
+				setGscStatus( response );
+			} catch ( err ) {
+				setGscStatus( {
+					ok: false,
+					message: err?.message || __( 'Could not refresh Search Console status.', '4wp-seo-helper' ),
+					gscInspectUrl: gscStatus?.gscInspectUrl || '',
+				} );
+			} finally {
+				setGscBusy( false );
+			}
+		};
+
+		useEffect( () => {
+			if ( ! postId ) {
+				setGscLoading( false );
+				return;
+			}
+			loadGscStatus( false );
+		}, [ postId, postStatus ] );
 
 		useEffect( () => {
 			if ( ! postId || postType !== 'practice_case' || ! apiFetch ) {
@@ -519,44 +604,337 @@
 				),
 			];
 
-		return el(
-			wp.element.Fragment,
-			null,
-			el(
-				PluginSidebarMoreMenuItem,
-				{ target: 'forwp-seo-sidebar', icon: chartBar || undefined },
-				__( '4wp SEO', '4wp-seo-helper' )
-			),
-			el(
-				PluginSidebar,
-				{ name: 'forwp-seo-sidebar', title: __( '4wp SEO', '4wp-seo-helper' ), icon: chartBar || undefined },
+		const formatRequestedAt = ( ts ) => {
+			const n = parseInt( ts, 10 );
+			if ( ! n ) {
+				return '';
+			}
+			return new Date( n * 1000 ).toLocaleString();
+		};
+
+		const formatCrawl = ( iso ) => {
+			if ( ! iso ) {
+				return '';
+			}
+			const date = new Date( iso );
+			if ( Number.isNaN( date.getTime() ) ) {
+				return iso;
+			}
+			return date.toLocaleString();
+		};
+
+		const scoreTone = ( value, noFocus ) => {
+			if ( noFocus || value === null || typeof value === 'undefined' || value === '' ) {
+				return 'na';
+			}
+			const n = parseInt( value, 10 );
+			if ( n >= 71 ) {
+				return 'good';
+			}
+			if ( n >= 41 ) {
+				return 'ok';
+			}
+			return 'bad';
+		};
+
+		const coverageTone = ( coverage, verdict ) => {
+			const text = ( coverage || '' ) + ' ' + ( verdict || '' );
+			if ( /pass|indexed/i.test( text ) && ! /not indexed|excluded|error/i.test( text ) ) {
+				return 'good';
+			}
+			if ( /fail|error|excluded|not indexed/i.test( text ) ) {
+				return 'bad';
+			}
+			return 'ok';
+		};
+
+		const shortenUrl = ( url ) => {
+			if ( ! url ) {
+				return '';
+			}
+			try {
+				const parsed = new URL( url );
+				return parsed.host.replace( /^www\./, '' ) + parsed.pathname.replace( /\/$/, '' );
+			} catch ( err ) {
+				return url;
+			}
+		};
+
+		const seo = gscStatus?.seo || null;
+		const gscInspect = gscStatus?.inspect || {};
+		const yoastPanelBody = [];
+		if ( seo && seo.adapter && seo.adapter !== 'none' ) {
+			const seoTone = scoreTone( seo.seo, seo.noFocus );
+			const readTone = scoreTone( seo.readability, false );
+			yoastPanelBody.push(
+				el(
+					'div',
+					{ key: 'scores', className: 'forwp-seo-side__scores' },
+					el(
+						'div',
+						{ className: 'forwp-seo-side__score forwp-seo-side__score--' + seoTone },
+						el(
+							'span',
+							{ className: 'forwp-seo-side__score-value' },
+							seo.noFocus || seo.seo === null ? '—' : String( seo.seo )
+						),
+						el(
+							'span',
+							{ className: 'forwp-seo-side__score-label' },
+							__( 'SEO', '4wp-seo-helper' )
+						)
+					),
+					el(
+						'div',
+						{ className: 'forwp-seo-side__score forwp-seo-side__score--' + readTone },
+						el(
+							'span',
+							{ className: 'forwp-seo-side__score-value' },
+							seo.readability === null ? '—' : String( seo.readability )
+						),
+						el(
+							'span',
+							{ className: 'forwp-seo-side__score-label' },
+							__( 'Readability', '4wp-seo-helper' )
+						)
+					)
+				)
+			);
+			if ( seo.label ) {
+				yoastPanelBody.push(
+					el( 'p', { key: 'label', className: 'forwp-seo-side__meta' }, seo.label )
+				);
+			}
+			yoastPanelBody.push(
+				el(
+					'p',
+					{ key: 'kw', className: 'forwp-seo-side__meta' },
+					seo.focusKeyword
+						? __( 'Focus keyphrase: ', '4wp-seo-helper' ) + seo.focusKeyword
+						: __( 'No focus keyphrase', '4wp-seo-helper' )
+				)
+			);
+		} else if ( gscStatus ) {
+			yoastPanelBody.push(
+				el(
+					'p',
+					{ key: 'none', className: 'forwp-seo-side__meta' },
+					__( 'Yoast SEO scores are not available for this post.', '4wp-seo-helper' )
+				)
+			);
+		} else if ( gscLoading ) {
+			yoastPanelBody.push( el( Spinner, { key: 'spin' } ) );
+		}
+
+		const gscPanelBody = [];
+		if ( postStatus !== 'publish' ) {
+			gscPanelBody.push(
+				el(
+					'p',
+					{ key: 'draft', className: 'forwp-seo-side__hint' },
+					__( 'Publish the post before requesting indexing.', '4wp-seo-helper' )
+				)
+			);
+		} else if ( gscLoading && ! gscStatus ) {
+			gscPanelBody.push( el( Spinner, { key: 'spin' } ) );
+		} else {
+			if ( gscStatus?.message ) {
+				gscPanelBody.push(
+					el(
+						'p',
+						{
+							key: 'msg',
+							className: 'forwp-seo-side__hint',
+							style: gscStatus.ok ? null : { color: '#b32d2e' },
+						},
+						gscStatus.message
+					)
+				);
+			}
+			if ( gscInspect.coverage || gscInspect.verdict ) {
+				gscPanelBody.push(
+					el(
+						'div',
+						{ key: 'pills', className: 'forwp-seo-side__pills' },
+						gscInspect.coverage
+							? el(
+								'span',
+								{
+									className:
+										'forwp-seo-side__pill forwp-seo-side__pill--' +
+										coverageTone( gscInspect.coverage, gscInspect.verdict ),
+								},
+								gscInspect.coverage
+							)
+							: null,
+						gscInspect.verdict
+							? el(
+								'span',
+								{
+									className:
+										'forwp-seo-side__pill forwp-seo-side__pill--' +
+										coverageTone( '', gscInspect.verdict ),
+								},
+								gscInspect.verdict
+							)
+							: null
+					)
+				);
+			}
+			const rows = [];
+			if ( gscInspect.lastCrawl ) {
+				rows.push(
+					el(
+						'div',
+						{ key: 'crawl', className: 'forwp-seo-side__row' },
+						el( 'dt', null, __( 'Last crawl', '4wp-seo-helper' ) ),
+						el( 'dd', null, formatCrawl( gscInspect.lastCrawl ) )
+					)
+				);
+			}
+			if ( gscInspect.googleCanonical || gscStatus?.inspectionUrl ) {
+				const canon = gscInspect.googleCanonical || gscStatus.inspectionUrl;
+				rows.push(
+					el(
+						'div',
+						{ key: 'canon', className: 'forwp-seo-side__row' },
+						el( 'dt', null, __( 'Google canonical', '4wp-seo-helper' ) ),
+						el(
+							'dd',
+							null,
+							el(
+								'a',
+								{ href: canon, target: '_blank', rel: 'noopener noreferrer' },
+								shortenUrl( canon )
+							)
+						)
+					)
+				);
+			}
+			if ( gscStatus?.requestedAt ) {
+				rows.push(
+					el(
+						'div',
+						{ key: 'req', className: 'forwp-seo-side__row' },
+						el( 'dt', null, __( 'Last indexing request', '4wp-seo-helper' ) ),
+						el( 'dd', null, formatRequestedAt( gscStatus.requestedAt ) )
+					)
+				);
+			}
+			if ( rows.length ) {
+				gscPanelBody.push( el( 'dl', { key: 'rows', className: 'forwp-seo-side__rows' }, rows ) );
+			}
+			if ( gscInspect.error ) {
+				gscPanelBody.push(
+					el( 'p', { key: 'err', className: 'forwp-seo-side__hint', style: { color: '#b32d2e' } }, gscInspect.error )
+				);
+			}
+			gscPanelBody.push(
+				el(
+					'p',
+					{ key: 'hint', className: 'forwp-seo-side__hint' },
+					__( 'Opens Google Search Console on this article URL. Click Request indexing there — the API cannot queue that action.', '4wp-seo-helper' )
+				)
+			);
+			const inspectHref = gscInspectHref( gscStatus?.property, gscStatus?.inspectionUrl ) || gscStatus?.gscInspectUrl || '';
+			gscPanelBody.push(
+				el(
+					'div',
+					{ key: 'actions', className: 'forwp-seo-side__actions' },
+					el(
+						Button,
+						{
+							variant: 'primary',
+							onClick: requestGscIndex,
+							disabled: ! gscStatus?.ready || ! inspectHref || gscBusy || gscLoading || postStatus !== 'publish',
+							isBusy: gscBusy,
+						},
+						__( 'Request indexing', '4wp-seo-helper' )
+					),
+					el(
+						Button,
+						{
+							variant: 'secondary',
+							onClick: () => loadGscStatus( true ),
+							disabled: ! gscStatus?.ready || gscBusy || gscLoading || postStatus !== 'publish',
+						},
+						__( 'Refresh status', '4wp-seo-helper' )
+					)
+				)
+			);
+		}
+
+		const sidebarPanels = [];
+		if ( yoastPanelBody.length ) {
+			sidebarPanels.push(
 				el(
 					PanelBody,
-					{ title: __( 'Schema.org (TechArticle)', '4wp-seo-helper' ), initialOpen: true },
+					{
+						key: 'yoast',
+						title: seo?.adapterLabel || __( 'Yoast SEO', '4wp-seo-helper' ),
+						initialOpen: true,
+					},
+					el( 'div', { className: 'forwp-seo-side' }, yoastPanelBody )
+				)
+			);
+		}
+		if ( settings.gscEnabled ) {
+			sidebarPanels.push(
+				el(
+					PanelBody,
+					{ key: 'gsc', title: __( 'Search Console', '4wp-seo-helper' ), initialOpen: true },
+					el( 'div', { className: 'forwp-seo-side' }, gscPanelBody )
+				)
+			);
+		}
+		if ( settings.techarticleEnabled ) {
+			sidebarPanels.push(
+				el(
+					PanelBody,
+					{ key: 'schema', title: __( 'Schema.org (TechArticle)', '4wp-seo-helper' ), initialOpen: ! settings.gscEnabled },
 					statusNotice,
 					statusList,
 					repairBlock
 				),
 				el(
 					PanelBody,
-					{ title: __( 'JSON-LD Preview', '4wp-seo-helper' ), initialOpen: false },
+					{ key: 'json', title: __( 'JSON-LD Preview', '4wp-seo-helper' ), initialOpen: false },
 					jsonPreviewBlock
 				),
 				el(
 					PanelBody,
-					{ title: __( 'Validation Tools', '4wp-seo-helper' ), initialOpen: false },
+					{ key: 'valid', title: __( 'Validation Tools', '4wp-seo-helper' ), initialOpen: false },
 					validationButtons
 				),
 				el(
 					PanelBody,
-					{ title: __( 'LLMS.txt Preview', '4wp-seo-helper' ), initialOpen: false },
+					{ key: 'llms', title: __( 'LLMS.txt Preview', '4wp-seo-helper' ), initialOpen: false },
 					llmsPreviewBlock
-				),
+				)
+			);
+		}
+		if ( settings.crosspostingEnabled || settings.techarticleEnabled ) {
+			sidebarPanels.push(
 				el(
 					PanelBody,
-					{ title: __( 'Cross posting', '4wp-seo-helper' ), initialOpen: true },
+					{ key: 'cross', title: __( 'Cross posting', '4wp-seo-helper' ), initialOpen: false },
 					...crosspostingBody
 				)
+			);
+		}
+
+		return el(
+			wp.element.Fragment,
+			null,
+			el(
+				PluginSidebarMoreMenuItem,
+				{ target: 'forwp-seo-sidebar', icon: chartBar || undefined },
+				__( '4WP SEO Helper', '4wp-seo-helper' )
+			),
+			el(
+				PluginSidebar,
+				{ name: 'forwp-seo-sidebar', title: __( '4WP SEO Helper', '4wp-seo-helper' ), icon: chartBar || undefined },
+				...sidebarPanels
 			)
 		);
 	};

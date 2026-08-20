@@ -5,7 +5,10 @@
 
 namespace Forwp\SeoHelper\Admin;
 
+use Forwp\SeoHelper\Core\Release;
 use Forwp\SeoHelper\CrossPosting\Module as CrossPostingModule;
+use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\Gsc\Module as GscModule;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -33,10 +36,23 @@ final class Editor {
 		}
 		self::$enqueued = true;
 
+		wp_enqueue_style(
+			'forwp-seo-editor-sidebar',
+			FORWP_SEO_HELPER_URL . 'assets/css/editor-sidebar.css',
+			[],
+			FORWP_SEO_HELPER_VERSION
+		);
+
 		$settings = [
-			'nonce'              => wp_create_nonce( 'wp_rest' ),
-			'baseUrl'            => esc_url_raw( rest_url( 'forwp-seo/v1' ) ),
-			'crosspostingEnabled' => CrossPostingModule::get_instance()->is_enabled(),
+			'nonce'               => wp_create_nonce( 'wp_rest' ),
+			'baseUrl'             => esc_url_raw( rest_url( 'forwp-seo/v1' ) ),
+			'crosspostingEnabled' => CrossPostingModule::get_instance()->is_enabled()
+				&& Release::is_module_public( Release::MODULE_CROSSPOSTING ),
+			'techarticleEnabled'  => Release::is_module_public( Release::MODULE_TECHARTICLE ),
+			'gscEnabled'          => Release::is_module_public( Release::MODULE_GSC )
+				&& GscModule::get_instance()->is_enabled(),
+			'gscConnected'        => GscAdmin::get_instance()->is_connected(),
+			'gscSettingsUrl'      => GscAdmin::get_instance()->get_settings_url(),
 		];
 
 		$deps = [ 'wp-plugins', 'wp-edit-post', 'wp-data', 'wp-element', 'wp-components', 'wp-i18n', 'wp-api-fetch', 'wp-blocks' ];

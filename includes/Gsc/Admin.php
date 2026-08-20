@@ -22,6 +22,7 @@ final class Admin {
 
 	private const OPTION_CLIENT_ID = 'forwp_seo_gsc_client_id';
 	private const OPTION_CLIENT_SECRET = 'forwp_seo_gsc_client_secret';
+	private const OPTION_REDIRECT_URI = 'forwp_seo_gsc_redirect_uri';
 	private const OPTION_ACCESS_TOKEN = 'forwp_seo_gsc_access_token';
 	private const OPTION_REFRESH_TOKEN = 'forwp_seo_gsc_refresh_token';
 	private const OPTION_TOKEN_EXPIRES = 'forwp_seo_gsc_token_expires';
@@ -35,7 +36,8 @@ final class Admin {
 	}
 
 	private function __construct() {
-		add_action( 'admin_post_forwp_seo_gsc_callback', [ $this, 'handle_callback' ] );
+		add_action( 'plugins_loaded', [ $this, 'maybe_handle_callback' ], 0 );
+		add_action( 'init', [ $this, 'maybe_handle_callback' ], 5 );
 		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 	}
 
@@ -85,7 +87,14 @@ final class Admin {
 		return $this->get_access_token();
 	}
 
-	public function render_page(): void {
+	/**
+	 * Handle GSC POST and redirects before any admin HTML is sent.
+	 */
+	public function handle_page_load(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		if ( ! Module::get_instance()->is_enabled() ) {
 			wp_safe_redirect(
 				add_query_arg(
@@ -99,15 +108,17 @@ final class Admin {
 			exit;
 		}
 
-		$redirect_tab = $this->handle_data_post();
-		if ( ! is_string( $redirect_tab ) ) {
-			$redirect_tab = $this->handle_sync_post();
+		$redirect = $this->handle_data_post();
+		if ( ! is_string( $redirect ) ) {
+			$redirect = $this->handle_sync_post();
 		}
-		if ( is_string( $redirect_tab ) ) {
-			wp_safe_redirect( $redirect_tab );
+		if ( is_string( $redirect ) ) {
+			wp_safe_redirect( $redirect );
 			exit;
 		}
+	}
 
+	public function render_page(): void {
 		$site         = get_option( self::OPTION_SITE, '' );
 		$is_connected = $this->is_connected();
 		$tab          = $this->get_active_tab();
@@ -236,12 +247,18 @@ final class Admin {
 	}
 
 	public function render_connect_section( bool $module_enabled = true ): void {
-		$client_id     = get_option( self::OPTION_CLIENT_ID, '' );
-		$client_secret = get_option( self::OPTION_CLIENT_SECRET, '' );
-		$site          = get_option( self::OPTION_SITE, '' );
-		$is_connected  = $this->is_connected();
-		$redirect_uri  = $this->get_redirect_uri();
-		$has_creds     = ( '' !== $client_id && '' !== $client_secret );
+		$client_id         = get_option( self::OPTION_CLIENT_ID, '' );
+		$client_secret     = get_option( self::OPTION_CLIENT_SECRET, '' );
+		$site              = get_option( self::OPTION_SITE, '' );
+		$is_connected      = $this->is_connected();
+		$redirect_uri      = $this->get_redirect_uri();
+		$redirect_override = (string) get_option( self::OPTION_REDIRECT_URI, '' );
+		$suggested_uri     = $this->get_suggested_oauth_redirect_uri();
+		$needs_loopback    = $this->needs_localhost_redirect_help();
+		$has_creds         = ( '' !== $client_id && '' !== $client_secret );
+		$redirect_locked   = defined( 'FORWP_SEO_GSC_OAUTH_REDIRECT_URI' );
+		$can_edit_redirect = $needs_loopback && $has_creds && ! $is_connected && ! $redirect_locked;
+		$override_value    = '' !== $redirect_override ? $redirect_override : $suggested_uri;
 		?>
 		<div class="forwp-seo-intro-card">
 			<h2 class="forwp-seo-intro-card__title"><?php esc_html_e( 'Google Search Console', '4wp-seo-helper' ); ?></h2>
@@ -268,9 +285,131 @@ final class Admin {
 		endif;
 		?>
 
+		<?php if ( $needs_loopback ) : ?>
+			<div class="forwp-seo-panel forwp-seo-panel--nested<?php echo $can_edit_redirect ? '' : ' is-inactive'; ?>">
+				<h2><?php esc_html_e( 'Development mode — OAuth redirect', '4wp-seo-helper' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Local sites only. Google usually rejects this host for OAuth. Use the loopback redirect below, register the same URI in Google Cloud, then connect.', '4wp-seo-helper' ); ?>
+				</p>
+				<?php if ( $redirect_locked ) : ?>
+					<p class="description">
+						<?php esc_html_e( 'Redirect URI is locked in wp-config.php (FORWP_SEO_GSC_OAUTH_REDIRECT_URI). Register that exact value in Google Cloud.', '4wp-seo-helper' ); ?>
+					</p>
+				<?php elseif ( ! $has_creds ) : ?>
+					<p class="description">
+						<?php esc_html_e( 'Save API credentials below first, then set the loopback redirect and register it in Google Cloud before Connect.', '4wp-seo-helper' ); ?>
+					</p>
+				<?php elseif ( $is_connected ) : ?>
+					<p class="description">
+						<?php esc_html_e( 'OAuth redirect is locked while your Google account is connected. Disconnect to change it.', '4wp-seo-helper' ); ?>
+					</p>
+				<?php endif; ?>
+				<form method="post">
+					<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
+					<input type="hidden" name="forwp_seo_gsc_context" value="gsc" />
+					<div class="forwp-seo-oauth-inline">
+						<input
+							type="url"
+							class="large-text code"
+							name="forwp_seo_gsc_redirect_uri"
+							id="forwp_seo_gsc_redirect_uri"
+							value="<?php echo esc_attr( $override_value ); ?>"
+							placeholder="<?php echo esc_attr( $this->get_default_redirect_uri() ); ?>"
+							autocomplete="off"
+							<?php disabled( ! $can_edit_redirect ); ?>
+						/>
+						<span class="forwp-seo-oauth-inline__btns">
+							<?php if ( '' !== $suggested_uri ) : ?>
+								<button
+									type="button"
+									class="button"
+									id="forwp-seo-gsc-use-suggested-redirect"
+									data-uri="<?php echo esc_attr( $suggested_uri ); ?>"
+									<?php disabled( ! $can_edit_redirect ); ?>
+								>
+									<?php esc_html_e( 'Use suggested', '4wp-seo-helper' ); ?>
+								</button>
+							<?php endif; ?>
+							<?php
+							submit_button(
+								__( 'Save redirect', '4wp-seo-helper' ),
+								'primary',
+								'forwp_seo_gsc_save_redirect',
+								false,
+								$can_edit_redirect ? [] : [ 'disabled' => 'disabled' ]
+							);
+							?>
+						</span>
+					</div>
+					<?php if ( '' !== $suggested_uri ) : ?>
+						<p class="description">
+							<code class="forwp-seo-code"><?php echo esc_html( $suggested_uri ); ?></code>
+						</p>
+					<?php endif; ?>
+				</form>
+			</div>
+		<?php endif; ?>
+
 		<div class="forwp-seo-row-two">
 			<div class="forwp-seo-panel forwp-seo-panel--nested">
 				<h2><?php esc_html_e( 'API credentials', '4wp-seo-helper' ); ?></h2>
+				<ol class="forwp-seo-setup-steps">
+					<li>
+						<?php
+						printf(
+							/* translators: %s: URL to enable Search Console API in Google Cloud */
+							wp_kses(
+								__( 'Enable the <a href="%s" target="_blank" rel="noopener noreferrer">Search Console API</a>.', '4wp-seo-helper' ),
+								[
+									'a' => [
+										'href'   => true,
+										'target' => true,
+										'rel'    => true,
+									],
+								]
+							),
+							esc_url( 'https://console.cloud.google.com/apis/library/searchconsole.googleapis.com' )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						printf(
+							/* translators: %s: URL to Google Cloud OAuth consent screen */
+							wp_kses(
+								__( 'If prompted, complete the <a href="%s" target="_blank" rel="noopener noreferrer">OAuth consent screen</a>.', '4wp-seo-helper' ),
+								[
+									'a' => [
+										'href'   => true,
+										'target' => true,
+										'rel'    => true,
+									],
+								]
+							),
+							esc_url( 'https://console.cloud.google.com/apis/credentials/consent' )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						printf(
+							/* translators: %s: URL to Google Cloud credentials */
+							wp_kses(
+								__( 'Create an OAuth client (type <strong>Web application</strong>) in <a href="%s" target="_blank" rel="noopener noreferrer">Credentials</a>, add the Redirect URI below, then paste Client ID and Client Secret here.', '4wp-seo-helper' ),
+								[
+									'a'      => [
+										'href'   => true,
+										'target' => true,
+										'rel'    => true,
+									],
+									'strong' => [],
+								]
+							),
+							esc_url( 'https://console.cloud.google.com/apis/credentials' )
+						);
+						?>
+					</li>
+				</ol>
 				<form method="post">
 					<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
 					<input type="hidden" name="forwp_seo_gsc_context" value="gsc" />
@@ -285,7 +424,12 @@ final class Admin {
 						</tr>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Redirect URI', '4wp-seo-helper' ); ?></th>
-							<td><code class="forwp-seo-code"><?php echo esc_html( $redirect_uri ); ?></code></td>
+							<td>
+								<code class="forwp-seo-code"><?php echo esc_html( $redirect_uri ); ?></code>
+								<p class="description">
+									<?php esc_html_e( 'Copy this URI into Authorized redirect URIs on the OAuth client.', '4wp-seo-helper' ); ?>
+								</p>
+							</td>
 						</tr>
 					</table>
 					<div class="forwp-seo-form-actions">
@@ -490,6 +634,16 @@ final class Admin {
 			return add_query_arg( 'gsc_saved', 'credentials', $redirect_url );
 		}
 
+		if ( isset( $_POST['forwp_seo_gsc_save_redirect'] ) ) {
+			$uri = trim( wp_unslash( (string) ( $_POST['forwp_seo_gsc_redirect_uri'] ?? '' ) ) );
+			if ( '' === $uri ) {
+				delete_option( self::OPTION_REDIRECT_URI );
+			} else {
+				update_option( self::OPTION_REDIRECT_URI, esc_url_raw( $uri, [ 'http', 'https' ] ) );
+			}
+			return add_query_arg( 'gsc_saved', 'redirect', $redirect_url );
+		}
+
 		if ( isset( $_POST['forwp_seo_gsc_save_property'] ) ) {
 			$local_dev = ! empty( $_POST['forwp_seo_gsc_local_dev_mode'] );
 			update_option( Module::OPTION_LOCAL_DEV_MODE, $local_dev ? '1' : '0' );
@@ -590,46 +744,52 @@ final class Admin {
 		return add_query_arg( 'sync_error', rawurlencode( $result['message'] ), $this->get_page_url( self::TAB_SYNC ) );
 	}
 
-	public function handle_callback(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_safe_redirect( $this->get_settings_url() );
-			exit;
+	public function maybe_handle_callback(): void {
+		if ( ! $this->is_oauth_callback_request() ) {
+			return;
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google; state transient verified below.
-		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['state'] ) ) : '';
+		$error = isset( $_GET['error'] ) ? sanitize_key( wp_unslash( (string) $_GET['error'] ) ) : '';
+		if ( '' !== $error ) {
+			$args = [
+				'gsc_error' => $error,
+			];
+			if ( ! empty( $_GET['error_description'] ) ) {
+				$args['gsc_error'] = sanitize_text_field( wp_unslash( (string) $_GET['error_description'] ) );
+			}
+			$this->redirect_after_oauth( $this->consume_pending_return_url(), $args );
+		}
+
 		$code  = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['code'] ) ) : '';
-		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['error'] ) ) : '';
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['state'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		$stored_state = get_transient( 'forwp_seo_gsc_state' );
-		if ( empty( $state ) || $state !== $stored_state ) {
-			wp_safe_redirect( $this->get_settings_url() );
-			exit;
+		if ( '' === $code || '' === $state || ! preg_match( '/^[a-zA-Z0-9]{32}$/', $state ) ) {
+			return;
 		}
 
-		delete_transient( 'forwp_seo_gsc_state' );
+		$pending = get_transient( $this->pending_state_key( $state ) );
+		delete_transient( $this->pending_state_key( $state ) );
 
-		if ( $error ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=' . rawurlencode( $error ) );
-			exit;
-		}
+		$return_url = is_array( $pending ) && ! empty( $pending['return_url'] )
+			? (string) $pending['return_url']
+			: null;
 
-		if ( empty( $code ) ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=missing_code' );
-			exit;
+		if ( ! is_array( $pending ) || empty( $pending['return_url'] ) ) {
+			$this->redirect_after_oauth( null, [ 'gsc_error' => 'invalid_state' ] );
 		}
 
 		$client_id     = get_option( self::OPTION_CLIENT_ID, '' );
 		$client_secret = get_option( self::OPTION_CLIENT_SECRET, '' );
-		$redirect_uri  = $this->get_redirect_uri();
-
-		$client = new Client();
-		$token  = $client->exchange_code( $client_id, $client_secret, $redirect_uri, $code );
+		$client        = new Client();
+		$token         = $client->exchange_code( $client_id, $client_secret, $this->get_redirect_uri(), $code );
 
 		if ( isset( $token['error'] ) ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=' . rawurlencode( $token['error'] ) );
-			exit;
+			$this->redirect_after_oauth(
+				$return_url,
+				[ 'gsc_error' => (string) $token['error'] ]
+			);
 		}
 
 		update_option( self::OPTION_ACCESS_TOKEN, sanitize_text_field( $token['access_token'] ?? '' ) );
@@ -640,20 +800,293 @@ final class Admin {
 
 		$this->sync_property_for_site();
 
-		wp_safe_redirect( $this->get_settings_url() . '&gsc_connected=1' );
-		exit;
+		$this->redirect_after_oauth( $return_url, [ 'gsc_connected' => '1' ] );
 	}
 
 	private function get_connect_url( string $client_id ): string {
-		$state = wp_generate_password( 24, false );
-		set_transient( 'forwp_seo_gsc_state', $state, 600 );
+		$state = wp_generate_password( 32, false );
+		set_transient(
+			$this->pending_state_key( $state ),
+			[
+				'user_id'    => get_current_user_id(),
+				'return_url' => $this->get_settings_url(),
+			],
+			10 * MINUTE_IN_SECONDS
+		);
 
 		$client = new Client();
 		return $client->get_authorization_url( $client_id, $this->get_redirect_uri(), $state );
 	}
 
+	private function get_default_redirect_uri(): string {
+		return admin_url( 'admin.php?page=' . Menu::OAUTH_PAGE_SLUG );
+	}
+
 	private function get_redirect_uri(): string {
-		return rest_url( 'forwp-seo/v1/gsc/callback' );
+		if ( defined( 'FORWP_SEO_GSC_OAUTH_REDIRECT_URI' ) && is_string( FORWP_SEO_GSC_OAUTH_REDIRECT_URI ) && '' !== FORWP_SEO_GSC_OAUTH_REDIRECT_URI ) {
+			return $this->normalize_loopback_redirect_uri( FORWP_SEO_GSC_OAUTH_REDIRECT_URI );
+		}
+
+		if ( $this->needs_localhost_redirect_help() ) {
+			$suggested = $this->get_suggested_oauth_redirect_uri();
+			if ( '' !== $suggested ) {
+				return $suggested;
+			}
+		}
+
+		$override = (string) get_option( self::OPTION_REDIRECT_URI, '' );
+		if ( '' !== $override ) {
+			return $this->normalize_loopback_redirect_uri( $override );
+		}
+
+		return $this->get_default_redirect_uri();
+	}
+
+	private function normalize_loopback_redirect_uri( string $uri ): string {
+		$host = strtolower( (string) wp_parse_url( $uri, PHP_URL_HOST ) );
+		if ( ! in_array( $host, [ '127.0.0.1', 'localhost', '[::1]' ], true ) ) {
+			return $uri;
+		}
+
+		$parts = wp_parse_url( $uri );
+		if ( ! is_array( $parts ) ) {
+			return $uri;
+		}
+
+		$port  = isset( $parts['port'] ) ? (int) $parts['port'] : 0;
+		$path  = isset( $parts['path'] ) ? $parts['path'] : '';
+		$query = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+		$suffix = $port > 0 && ! in_array( $port, [ 80, 443 ], true ) ? ':' . $port : '';
+
+		// Local nginx on this port is HTTP-only. Match the URI already in Google Cloud.
+		return 'http://127.0.0.1' . $suffix . $path . $query;
+	}
+
+	private function sanitize_redirect_uri_override( string $uri ): string {
+		$uri = trim( $uri );
+		if ( '' === $uri ) {
+			return '';
+		}
+
+		return esc_url_raw( $uri, [ 'http', 'https' ] );
+	}
+
+	private function needs_localhost_redirect_help(): bool {
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( ! is_string( $host ) || '' === $host ) {
+			return false;
+		}
+
+		$host = strtolower( $host );
+		if ( in_array( $host, [ 'localhost', '127.0.0.1', '[::1]' ], true ) ) {
+			return true;
+		}
+
+		if ( ! str_contains( $host, '.' ) ) {
+			return true;
+		}
+
+		return (bool) preg_match( '/\.(local|localhost|test|invalid)$/i', $host );
+	}
+
+	private function get_suggested_oauth_redirect_uri(): string {
+		if ( ! $this->needs_localhost_redirect_help() ) {
+			return '';
+		}
+
+		$parts = wp_parse_url( $this->get_default_redirect_uri() );
+		if ( ! is_array( $parts ) ) {
+			$parts = [
+				'path'  => '/wp-admin/admin.php',
+				'query' => 'page=' . Menu::OAUTH_PAGE_SLUG,
+			];
+		}
+
+		$port = isset( $parts['port'] ) ? (int) $parts['port'] : 0;
+		if ( $port <= 0 ) {
+			$port = $this->detect_local_http_port();
+		}
+
+		$port_suffix = $port > 0 && ! in_array( $port, [ 80, 443 ], true ) ? ':' . $port : '';
+		$path        = isset( $parts['path'] ) ? $parts['path'] : '/wp-admin/admin.php';
+		$query       = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+
+		return 'http://127.0.0.1' . $port_suffix . $path . $query;
+	}
+
+	private function detect_local_http_port(): int {
+		if ( ! empty( $_SERVER['SERVER_PORT'] ) ) {
+			$port = (int) $_SERVER['SERVER_PORT'];
+			if ( $port > 0 && ! in_array( $port, [ 80, 443 ], true ) ) {
+				return $port;
+			}
+		}
+
+		$host = isset( $_SERVER['HTTP_HOST'] )
+			? sanitize_text_field( wp_unslash( (string) $_SERVER['HTTP_HOST'] ) )
+			: '';
+		if ( false !== strpos( $host, ':' ) ) {
+			$port = (int) substr( $host, (int) strrpos( $host, ':' ) + 1 );
+			if ( $port > 0 ) {
+				return $port;
+			}
+		}
+
+		$from_app = $this->detect_local_app_http_port();
+		if ( $from_app > 0 ) {
+			return $from_app;
+		}
+
+		return (int) apply_filters( 'forwp_seo_gsc_loopback_http_port', 0 );
+	}
+
+	private function detect_local_app_http_port(): int {
+		$candidates = [];
+		$home       = getenv( 'HOME' );
+		$home       = is_string( $home ) ? $home : '';
+		if ( '' !== $home ) {
+			$candidates[] = $home . '/Library/Application Support/Local/sites.json';
+		}
+		$appdata = getenv( 'APPDATA' );
+		if ( is_string( $appdata ) && '' !== $appdata ) {
+			$candidates[] = $appdata . '/Local/sites.json';
+		}
+
+		$abspath = wp_normalize_path( untrailingslashit( ABSPATH ) );
+
+		foreach ( $candidates as $file ) {
+			if ( ! is_readable( $file ) ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local app config, not a remote request.
+			$json = file_get_contents( $file );
+			if ( ! is_string( $json ) || '' === $json ) {
+				continue;
+			}
+
+			$data = json_decode( $json, true );
+			if ( ! is_array( $data ) ) {
+				continue;
+			}
+
+			foreach ( $data as $site ) {
+				if ( ! is_array( $site ) ) {
+					continue;
+				}
+
+				$path = isset( $site['path'] ) ? (string) $site['path'] : '';
+				if ( '' !== $home ) {
+					$path = str_replace( '~', $home, $path );
+				}
+				$path = wp_normalize_path( untrailingslashit( $path ) );
+				if ( '' === $path || ! str_starts_with( $abspath, $path ) ) {
+					continue;
+				}
+
+				$port = (int) ( $site['services']['nginx']['ports']['HTTP'][0] ?? 0 );
+				if ( $port > 0 ) {
+					return $port;
+				}
+			}
+		}
+
+		return 0;
+	}
+
+	private function is_oauth_callback_request(): bool {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback query flag.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+		if ( Menu::OAUTH_PAGE_SLUG !== $page ) {
+			return false;
+		}
+
+		$uri = isset( $_SERVER['REQUEST_URI'] )
+			? sanitize_text_field( wp_unslash( (string) $_SERVER['REQUEST_URI'] ) )
+			: '';
+
+		return false !== strpos( $uri, 'wp-admin/admin.php' );
+	}
+
+	private function pending_state_key( string $state ): string {
+		return 'forwp_seo_gsc_oauth_' . $state;
+	}
+
+	private function consume_pending( string $state ): ?array {
+		if ( '' === $state || ! preg_match( '/^[a-zA-Z0-9]{32}$/', $state ) ) {
+			return null;
+		}
+
+		$key     = $this->pending_state_key( $state );
+		$pending = get_transient( $key );
+		delete_transient( $key );
+
+		return is_array( $pending ) ? $pending : null;
+	}
+
+	private function process_oauth_callback( string $state, string $code, string $error ): void {
+		$pending    = $this->consume_pending( $state );
+		$return_url = is_array( $pending ) && ! empty( $pending['return_url'] )
+			? (string) $pending['return_url']
+			: $this->get_settings_url();
+
+		if ( ! is_array( $pending ) ) {
+			$this->redirect_after_oauth( $return_url, [ 'gsc_error' => 'invalid_state' ] );
+		}
+
+		if ( '' !== $error ) {
+			$this->redirect_after_oauth( $return_url, [ 'gsc_error' => $error ] );
+		}
+
+		if ( '' === $code ) {
+			$this->redirect_after_oauth( $return_url, [ 'gsc_error' => 'missing_code' ] );
+		}
+
+		$client_id     = get_option( self::OPTION_CLIENT_ID, '' );
+		$client_secret = get_option( self::OPTION_CLIENT_SECRET, '' );
+		$client        = new Client();
+		$token         = $client->exchange_code( $client_id, $client_secret, $this->get_redirect_uri(), $code );
+
+		if ( isset( $token['error'] ) ) {
+			$this->redirect_after_oauth( $return_url, [ 'gsc_error' => (string) $token['error'] ] );
+		}
+
+		update_option( self::OPTION_ACCESS_TOKEN, sanitize_text_field( $token['access_token'] ?? '' ) );
+		if ( ! empty( $token['refresh_token'] ) ) {
+			update_option( self::OPTION_REFRESH_TOKEN, sanitize_text_field( $token['refresh_token'] ) );
+		}
+		update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $token['expires_in'] ?? 0 ) );
+
+		$this->sync_property_for_site();
+
+		$this->redirect_after_oauth( $return_url, [ 'gsc_connected' => '1' ] );
+	}
+
+	private function consume_pending_return_url(): ?string {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state from Google callback.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['state'] ) ) : '';
+		if ( '' === $state ) {
+			return null;
+		}
+
+		$pending = $this->consume_pending( $state );
+		if ( ! is_array( $pending ) || empty( $pending['return_url'] ) ) {
+			return null;
+		}
+
+		return (string) $pending['return_url'];
+	}
+
+	/**
+	 * @param array<string, string> $args Query args.
+	 */
+	private function redirect_after_oauth( ?string $return_url, array $args ): void {
+		$base = is_string( $return_url ) && '' !== $return_url
+			? remove_query_arg( [ 'gsc_connected', 'gsc_error', 'gsc_saved' ], $return_url )
+			: $this->get_settings_url();
+
+		wp_safe_redirect( add_query_arg( $args, $base ) );
+		exit;
 	}
 
 	public function register_rest_routes(): void {
@@ -663,56 +1096,19 @@ final class Admin {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_rest_callback' ],
-				'permission_callback' => '__return_true', // Public endpoint, but secured by state parameter
+				'permission_callback' => '__return_true',
 			]
 		);
 	}
 
 	public function handle_rest_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$state = sanitize_text_field( $request->get_param( 'state' ) ?? '' );
-		$code  = sanitize_text_field( $request->get_param( 'code' ) ?? '' );
-		$error = sanitize_text_field( $request->get_param( 'error' ) ?? '' );
+		$state = sanitize_text_field( (string) ( $request->get_param( 'state' ) ?? '' ) );
+		$code  = sanitize_text_field( (string) ( $request->get_param( 'code' ) ?? '' ) );
+		$error = sanitize_text_field( (string) ( $request->get_param( 'error' ) ?? '' ) );
 
-		$stored_state = get_transient( 'forwp_seo_gsc_state' );
-		if ( empty( $state ) || $state !== $stored_state ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=invalid_state' );
-			exit;
-		}
+		$this->process_oauth_callback( $state, $code, $error );
 
-		delete_transient( 'forwp_seo_gsc_state' );
-
-		if ( $error ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=' . rawurlencode( $error ) );
-			exit;
-		}
-
-		if ( empty( $code ) ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=missing_code' );
-			exit;
-		}
-
-		$client_id     = get_option( self::OPTION_CLIENT_ID, '' );
-		$client_secret = get_option( self::OPTION_CLIENT_SECRET, '' );
-		$redirect_uri  = $this->get_redirect_uri();
-
-		$client = new Client();
-		$token  = $client->exchange_code( $client_id, $client_secret, $redirect_uri, $code );
-
-		if ( isset( $token['error'] ) ) {
-			wp_safe_redirect( $this->get_settings_url() . '&gsc_error=' . rawurlencode( $token['error'] ) );
-			exit;
-		}
-
-		update_option( self::OPTION_ACCESS_TOKEN, sanitize_text_field( $token['access_token'] ?? '' ) );
-		if ( ! empty( $token['refresh_token'] ) ) {
-			update_option( self::OPTION_REFRESH_TOKEN, sanitize_text_field( $token['refresh_token'] ) );
-		}
-		update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $token['expires_in'] ?? 0 ) );
-
-		$this->sync_property_for_site();
-
-		wp_safe_redirect( $this->get_settings_url() . '&gsc_connected=1' );
-		exit;
+		return new \WP_REST_Response( null, 302 );
 	}
 
 	private function get_access_token(): string {
@@ -822,16 +1218,7 @@ final class Admin {
 			return false;
 		}
 
-		if ( str_starts_with( $site, 'sc-domain:' ) ) {
-			$domain = substr( $site, 10 );
-			$host   = wp_parse_url( $url, PHP_URL_HOST );
-
-			return is_string( $host ) && ( $host === $domain || str_ends_with( $host, '.' . $domain ) );
-		}
-
-		$prefix = untrailingslashit( $site );
-
-		return str_starts_with( $url, $prefix . '/' ) || $url === $prefix;
+		return PropertyResolver::url_belongs_to_property( $url, $site );
 	}
 
 	private function sync_property_for_site(): bool {

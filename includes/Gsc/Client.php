@@ -61,7 +61,7 @@ final class Client {
 			'state'         => $state,
 		];
 
-		return 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query( $params );
+		return 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query( $params, '', '&', PHP_QUERY_RFC3986 );
 	}
 
 	public function exchange_code( string $client_id, string $client_secret, string $redirect_uri, string $code ): array {
