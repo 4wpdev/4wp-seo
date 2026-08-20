@@ -5,6 +5,12 @@
 
 namespace Forwp\SeoHelper\Admin;
 
+use Forwp\SeoHelper\Core\Release;
+use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
+use Forwp\SeoHelper\Gsc\Module as GscModule;
+use Forwp\SeoHelper\Gsc\PageMetrics;
+use Forwp\SeoHelper\Gsc\ReportPeriod;
 use Forwp\SeoHelper\Inventory\PriorityLabels;
 use Forwp\SeoHelper\Inventory\Repository;
 
@@ -29,6 +35,8 @@ final class InventoryListTable extends \WP_List_Table {
 
 	/** @var int|null|string null = all groups, 1-3 = single, 'queued' = P1-P3 only */
 	private $priority_filter = null;
+
+	private bool $show_gsc_metrics = false;
 
 	public function __construct( Repository $repository ) {
 		$this->repository = $repository;
@@ -62,6 +70,10 @@ final class InventoryListTable extends \WP_List_Table {
 	 */
 	public function set_priority_filter( $priority ): void {
 		$this->priority_filter = $priority;
+	}
+
+	public function set_show_gsc_metrics( bool $show ): void {
+		$this->show_gsc_metrics = $show;
 	}
 
 	protected function column_cb( $item ): string {
@@ -101,9 +113,18 @@ final class InventoryListTable extends \WP_List_Table {
 			'meta_description' => __( 'Meta description', '4wp-seo-helper' ),
 			'focus_keyword'    => __( 'Focus keyword', '4wp-seo-helper' ),
 			'og_image'         => __( 'OG image', '4wp-seo-helper' ),
-			'completeness'     => __( 'Score', '4wp-seo-helper' ),
+			'completeness'     => $this->get_score_column_label(),
 			'missing'          => __( 'Missing', '4wp-seo-helper' ),
 		];
+
+		if ( $this->show_gsc_metrics ) {
+			$range_label = ReportPeriod::label();
+			$columns['gsc'] = sprintf(
+				/* translators: %s: date range label, e.g. Last 28 days */
+				__( 'Search Console (%s)', '4wp-seo-helper' ),
+				$range_label
+			);
+		}
 
 		if ( $this->show_language ) {
 			$columns = array_merge(
@@ -147,6 +168,14 @@ final class InventoryListTable extends \WP_List_Table {
 				'sort_by_priority' => true,
 			]
 		);
+
+		if ( $this->show_gsc_metrics ) {
+			$result['items'] = ( new PageMetrics() )->enrich_records(
+				$result['items'],
+				GscAdmin::get_site_property(),
+				ReportPeriod::get_days()
+			);
+		}
 
 		$this->items = $result['items'];
 		$this->set_pagination_args(
@@ -534,13 +563,22 @@ final class InventoryListTable extends \WP_List_Table {
 				return esc_html( (string) $item['post_id'] );
 
 			case 'completeness':
-				$score = (int) $item['completeness'];
-				$class = $score >= 75 ? 'good' : ( $score >= 50 ? 'medium' : 'low' );
-				return '<span class="forwp-seo-score forwp-seo-score--' . esc_attr( $class ) . '">' . esc_html( (string) $score ) . '%</span>';
+				return $this->render_score_cell( $item );
+
+			case 'post_type':
+				return $this->render_post_type_cell( (string) ( $item['post_type'] ?? '' ) );
+
+			case 'gsc':
+				return $this->render_gsc_cell( $item );
 
 			case 'missing':
 				$missing = is_array( $item['missing'] ?? null ) ? $item['missing'] : [];
 				return esc_html( implode( ', ', $missing ) );
+
+			case 'gsc_clicks':
+			case 'gsc_impressions':
+				unset( $item );
+				return '';
 
 			case 'seo_title':
 			case 'meta_description':
@@ -558,5 +596,141 @@ final class InventoryListTable extends \WP_List_Table {
 
 	public function no_items(): void {
 		esc_html_e( 'No posts found for the current filters.', '4wp-seo-helper' );
+	}
+
+	private function get_score_column_label(): string {
+		$adapter = SeoMetaRegistry::get_active();
+		if ( 'none' === $adapter->get_id() ) {
+			return __( 'Completeness', '4wp-seo-helper' );
+		}
+
+		return sprintf(
+			/* translators: %s: SEO plugin name, e.g. Yoast SEO */
+			__( 'SEO score (%s)', '4wp-seo-helper' ),
+			$adapter->get_label()
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 */
+	private function render_score_cell( array $item ): string {
+		$label_text = (string) ( $item['seo_score_label'] ?? '' );
+		$no_focus   = ! empty( $item['seo_no_focus'] );
+		$seo_score  = $item['seo_score'] ?? null;
+
+		if ( $no_focus && ( null === $seo_score || 0 === (int) $seo_score ) ) {
+			return '<span class="forwp-seo-score forwp-seo-score--na" title="' . esc_attr( $label_text ) . '">' . esc_html( $label_text ?: __( 'No focus keyphrase', '4wp-seo-helper' ) ) . '</span>';
+		}
+
+		$score = null !== $seo_score ? (int) $seo_score : (int) ( $item['completeness'] ?? 0 );
+		$class = $score >= 71 ? 'good' : ( $score >= 41 ? 'medium' : 'low' );
+		$title = $label_text ?: '';
+
+		return '<span class="forwp-seo-score forwp-seo-score--' . esc_attr( $class ) . '" title="' . esc_attr( $title ) . '">' . esc_html( (string) $score ) . '</span>';
+	}
+
+	private function render_post_type_cell( string $post_type ): string {
+		if ( '' === $post_type ) {
+			return '';
+		}
+
+		$object = get_post_type_object( $post_type );
+		$label  = $object ? (string) $object->labels->singular_name : $post_type;
+		$icon   = $this->resolve_post_type_icon( $object, $post_type );
+
+		if ( str_starts_with( $icon, 'dashicons-' ) ) {
+			return sprintf(
+				'<span class="forwp-seo-post-type-icon %1$s" title="%2$s" aria-label="%2$s"><span class="screen-reader-text">%2$s</span></span>',
+				esc_attr( $icon ),
+				esc_attr( $label )
+			);
+		}
+
+		return sprintf(
+			'<span class="forwp-seo-post-type-icon" title="%1$s"><img src="%2$s" alt="" width="18" height="18" /></span>',
+			esc_attr( $label ),
+			esc_url( $icon )
+		);
+	}
+
+	/**
+	 * @param \WP_Post_Type|null $object
+	 */
+	private function resolve_post_type_icon( ?\WP_Post_Type $object, string $post_type ): string {
+		$icon = is_object( $object ) && ! empty( $object->menu_icon ) ? (string) $object->menu_icon : '';
+
+		if ( str_starts_with( $icon, 'dashicons-' ) ) {
+			return $icon;
+		}
+
+		if ( '' !== $icon && filter_var( $icon, FILTER_VALIDATE_URL ) ) {
+			return $icon;
+		}
+
+		return match ( $post_type ) {
+			'page' => 'dashicons-admin-page',
+			'post' => 'dashicons-admin-post',
+			default => 'dashicons-admin-post',
+		};
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 */
+	private function render_gsc_cell( array $item ): string {
+		$clicks      = (int) ( $item['gsc_clicks'] ?? 0 );
+		$impressions = (int) ( $item['gsc_impressions'] ?? 0 );
+		$position    = (float) ( $item['gsc_position'] ?? 0 );
+		$ctr         = (float) ( $item['gsc_ctr'] ?? 0 );
+		$queries     = is_array( $item['gsc_top_queries'] ?? null ) ? $item['gsc_top_queries'] : [];
+
+		if ( $clicks <= 0 && $impressions <= 0 ) {
+			return '<span aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'No synced data', '4wp-seo-helper' ) . '</span>';
+		}
+
+		$html = '<div class="forwp-seo-gsc-inventory">';
+		$html .= '<div class="forwp-seo-gsc-inventory__metrics">';
+		$html .= esc_html(
+			sprintf(
+				/* translators: 1: clicks, 2: impressions */
+				__( '%1$s clicks · %2$s impr.', '4wp-seo-helper' ),
+				number_format_i18n( $clicks ),
+				number_format_i18n( $impressions )
+			)
+		);
+		if ( $position > 0 || $ctr > 0 ) {
+			$html .= '<br /><span class="forwp-seo-gsc-inventory__sub">';
+			$html .= esc_html(
+				sprintf(
+					/* translators: 1: average position, 2: CTR percent */
+					__( 'Pos %1$s · CTR %2$s%%', '4wp-seo-helper' ),
+					number_format_i18n( $position, 1 ),
+					number_format_i18n( $ctr * 100, 1 )
+				)
+			);
+			$html .= '</span>';
+		}
+		$html .= '</div>';
+
+		if ( ! empty( $queries ) ) {
+			$html .= '<ul class="forwp-seo-gsc-inventory__queries">';
+			foreach ( $queries as $query_row ) {
+				$query = (string) ( $query_row['query'] ?? '' );
+				if ( '' === $query ) {
+					continue;
+				}
+				$html .= '<li>' . esc_html( wp_html_excerpt( $query, 48, '…' ) );
+				if ( ! empty( $query_row['clicks'] ) ) {
+					$html .= ' <span class="forwp-seo-gsc-inventory__q-clicks">(' . esc_html( number_format_i18n( (int) $query_row['clicks'] ) ) . ')</span>';
+				}
+				$html .= '</li>';
+			}
+			$html .= '</ul>';
+		}
+
+		$html .= '</div>';
+
+		return $html;
 	}
 }

@@ -5,6 +5,9 @@
 
 namespace Forwp\SeoHelper\Admin;
 
+use Forwp\SeoHelper\Core\Release;
+use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\Gsc\Module as GscModule;
 use Forwp\SeoHelper\Inventory\PriorityLabels;
 use Forwp\SeoHelper\Inventory\Repository;
 use Forwp\SeoHelper\Multilingual\Registry as MultilingualRegistry;
@@ -15,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Menu {
 	public const PAGE_SLUG                 = 'forwp-seo';
+	public const SETTINGS_PAGE_SLUG        = 'forwp-seo-settings';
+	public const GSC_PAGE_SLUG             = 'forwp-seo-gsc';
 	public const INVENTORY_PAGE_SLUG       = 'forwp-seo-inventory';
 	public const INVENTORY_PER_PAGE_OPTION = 'forwp_seo_inventory_per_page';
 
@@ -22,6 +27,12 @@ final class Menu {
 
 	/** @var string|null Return value from add_submenu_page() — used for load-* / hook_suffix. */
 	private static $inventory_page_hook = null;
+
+	/** @var string|null */
+	private static $settings_page_hook = null;
+
+	/** @var string|null */
+	private static $gsc_page_hook = null;
 
 	public static function get_instance(): self {
 		if ( null === self::$instance ) {
@@ -32,6 +43,7 @@ final class Menu {
 
 	private function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
+		add_action( 'admin_init', [ $this, 'handle_legacy_routes' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
 		add_filter(
 			'set_screen_option_' . self::INVENTORY_PER_PAGE_OPTION,
@@ -50,9 +62,18 @@ final class Menu {
 			__( '4WP SEO', '4wp-seo-helper' ),
 			'manage_options',
 			self::PAGE_SLUG,
-			[ Page::class, 'render' ],
+			[ DashboardPage::class, 'render' ],
 			'dashicons-chart-line',
 			30
+		);
+
+		add_submenu_page(
+			self::PAGE_SLUG,
+			__( 'Dashboard', '4wp-seo-helper' ),
+			__( 'Dashboard', '4wp-seo-helper' ),
+			'manage_options',
+			self::PAGE_SLUG,
+			[ DashboardPage::class, 'render' ]
 		);
 
 		self::$inventory_page_hook = add_submenu_page(
@@ -64,13 +85,80 @@ final class Menu {
 			[ InventoryPage::class, 'render' ]
 		);
 
+		if ( Release::is_module_public( Release::MODULE_GSC ) && GscModule::get_instance()->is_enabled() ) {
+			self::$gsc_page_hook = add_submenu_page(
+				self::PAGE_SLUG,
+				__( 'Search Console', '4wp-seo-helper' ),
+				__( 'GSC', '4wp-seo-helper' ),
+				'manage_options',
+				self::GSC_PAGE_SLUG,
+				[ GscPage::class, 'render' ]
+			);
+
+			if ( ! GscAdmin::get_instance()->is_menu_visible() ) {
+				remove_submenu_page( self::PAGE_SLUG, self::GSC_PAGE_SLUG );
+			}
+		}
+
+		self::$settings_page_hook = add_submenu_page(
+			self::PAGE_SLUG,
+			__( 'Settings', '4wp-seo-helper' ),
+			__( 'Settings', '4wp-seo-helper' ),
+			'manage_options',
+			self::SETTINGS_PAGE_SLUG,
+			[ Page::class, 'render' ]
+		);
+
 		if ( is_string( self::$inventory_page_hook ) && '' !== self::$inventory_page_hook ) {
 			add_action( 'load-' . self::$inventory_page_hook, [ $this, 'inventory_screen_options' ] );
 		}
 	}
 
+	public function handle_legacy_routes(): void {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Legacy admin URL redirects.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( self::PAGE_SLUG !== $page ) {
+			return;
+		}
+
+		if ( 'gsc' === $tab ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_PAGE_SLUG . '&tab=gsc' ) );
+			exit;
+		}
+
+		if ( in_array( $tab, [ 'overview', 'settings', 'api' ], true ) ) {
+			wp_safe_redirect(
+				add_query_arg(
+					[
+						'page' => self::SETTINGS_PAGE_SLUG,
+						'tab'  => $tab,
+					],
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+	}
+
 	public function enqueue_admin_assets( string $hook_suffix ): void {
 		if ( 'toplevel_page_' . self::PAGE_SLUG === $hook_suffix ) {
+			wp_enqueue_style(
+				'forwp-seo-admin-settings',
+				FORWP_SEO_HELPER_URL . 'assets/css/admin-settings.css',
+				[],
+				FORWP_SEO_HELPER_VERSION
+			);
+			return;
+		}
+
+		if ( is_string( self::$settings_page_hook ) && self::$settings_page_hook === $hook_suffix ) {
 			wp_enqueue_style( 'wp-components' );
 			wp_enqueue_style(
 				'forwp-seo-admin-settings',
@@ -78,10 +166,43 @@ final class Menu {
 				[ 'wp-components' ],
 				FORWP_SEO_HELPER_VERSION
 			);
-
 			wp_enqueue_script(
 				'forwp-seo-admin-tabs',
 				FORWP_SEO_HELPER_URL . 'assets/js/admin-tabs.js',
+				[],
+				FORWP_SEO_HELPER_VERSION,
+				true
+			);
+			return;
+		}
+
+		if (
+			( is_string( self::$gsc_page_hook ) && self::$gsc_page_hook === $hook_suffix )
+			|| str_ends_with( $hook_suffix, '_page_' . self::GSC_PAGE_SLUG )
+		) {
+			wp_enqueue_style( 'wp-components' );
+			wp_enqueue_style(
+				'forwp-seo-admin-settings',
+				FORWP_SEO_HELPER_URL . 'assets/css/admin-settings.css',
+				[ 'wp-components' ],
+				FORWP_SEO_HELPER_VERSION
+			);
+			wp_enqueue_style(
+				'forwp-seo-gsc-data',
+				FORWP_SEO_HELPER_URL . 'assets/css/gsc-data.css',
+				[ 'forwp-seo-admin-settings' ],
+				FORWP_SEO_HELPER_VERSION
+			);
+			wp_enqueue_script(
+				'forwp-seo-admin-tabs',
+				FORWP_SEO_HELPER_URL . 'assets/js/admin-tabs.js',
+				[],
+				FORWP_SEO_HELPER_VERSION,
+				true
+			);
+			wp_enqueue_script(
+				'forwp-seo-gsc-sync-status',
+				FORWP_SEO_HELPER_URL . 'assets/js/gsc-sync-status.js',
 				[],
 				FORWP_SEO_HELPER_VERSION,
 				true
@@ -205,21 +326,3 @@ final class Menu {
 		);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

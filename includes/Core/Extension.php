@@ -11,6 +11,7 @@ use Forwp\SeoHelper\Admin\Notices;
 use Forwp\SeoHelper\Blocks\TechArticleWrappers;
 use Forwp\SeoHelper\CrossPosting\Module as CrossPostingModule;
 use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\Gsc\Module as GscModule;
 use Forwp\SeoHelper\Llms\Generator;
 use Forwp\SeoHelper\Schema\TechArticle;
 use Forwp\SeoHelper\Schema\TechArticleRest;
@@ -49,6 +50,7 @@ final class Extension {
 		Generator::get_instance();
 		CrossPostingModule::get_instance();
 		InventoryModule::get_instance();
+		GscModule::get_instance();
 		GscAdmin::get_instance(); // Must be initialized for REST API callback
 
 		if ( is_admin() ) {

@@ -27,10 +27,10 @@
 	}
 
 	function scoreClass( score ) {
-		if ( score >= 75 ) {
+		if ( score >= 71 ) {
 			return 'good';
 		}
-		if ( score >= 50 ) {
+		if ( score >= 41 ) {
 			return 'medium';
 		}
 		return 'low';
@@ -230,8 +230,12 @@
 			ogImage.innerHTML = ogImageCell( item.og_image || '' );
 		}
 		if ( score ) {
-			var value = parseInt( item.completeness, 10 ) || 0;
-			score.innerHTML = '<span class="forwp-seo-score forwp-seo-score--' + scoreClass( value ) + '">' + value + '%</span>';
+			if ( item.seo_no_focus && ( null === item.seo_score || 0 === parseInt( item.seo_score, 10 ) ) ) {
+				score.innerHTML = '<span class="forwp-seo-score forwp-seo-score--na">' + escHtml( item.seo_score_label || 'No focus keyphrase' ) + '</span>';
+			} else {
+				var value = parseInt( null != item.seo_score ? item.seo_score : item.completeness, 10 ) || 0;
+				score.innerHTML = '<span class="forwp-seo-score forwp-seo-score--' + scoreClass( value ) + '" title="' + escHtml( item.seo_score_label || '' ) + '">' + value + '</span>';
+			}
 		}
 		if ( missing ) {
 			var list = Array.isArray( item.missing ) ? item.missing : [];

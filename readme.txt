@@ -36,9 +36,9 @@ A plugin by [4wp.dev](https://4wp.dev/).
 
 Priority reflects **business importance** (e.g. main service pages), not SEO score—a page can stay in P1 at 100% completeness.
 
-= WordPress.org 1.0.0 scope =
+= Modules =
 
-This release ships **SEO Inventory** and the **Inventory REST API** only. TechArticle schema, Google Search Console, LLMS.txt, and cross posting appear as **Coming soon** in wp-admin and will ship in future releases.
+**SEO Inventory**, **Inventory REST API**, and **Google Search Console** (OAuth, property picker, URL inspection, search analytics) are available in wp-admin. TechArticle schema, LLMS.txt, and cross posting appear as **Coming soon** until a future release.
 
 == Installation ==
 
@@ -79,7 +79,11 @@ Public post types with `show_ui` are discovered automatically. Exclude types wit
 
 = What modules are coming soon? =
 
-TechArticle schema and blocks, Google Search Console integration, LLMS.txt, and cross posting are in the codebase but hidden behind **Coming soon** badges until a future release.
+TechArticle schema and blocks, LLMS.txt, and cross posting are in the codebase but hidden behind **Coming soon** badges until a future release.
+
+= How do I connect Google Search Console? =
+
+Open **4WP SEO → Search Console**. Add OAuth Client ID and Secret from Google Cloud Console, use the redirect URI shown on that screen, then connect and select your property.
 
 = Does it depend on other 4WP plugins? =
 
@@ -104,7 +108,8 @@ No. Yoast SEO and All in One SEO are separate products. **4WP** is our project b
 * SEO adapters for **Yoast SEO** and **All in One SEO**.
 * Multilingual support: Polylang, WPML, single-language.
 * **REST API** (`forwp-seo-helper/v1/seo-inventory`) for external sync.
-* Future modules (TechArticle, GSC, LLMS.txt, cross posting) visible as Coming soon in admin.
+* **Google Search Console** — OAuth, property picker, URL inspection, 28-day search metrics.
+* Future modules (TechArticle, LLMS.txt, cross posting) visible as Coming soon in admin.
 
 == Upgrade Notice ==
 

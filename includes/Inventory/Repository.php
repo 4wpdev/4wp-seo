@@ -247,6 +247,7 @@ final class Repository {
 		}
 
 		$completeness = $this->scorer->score( $meta );
+		$seo_scores   = $adapter->read_scores( $post->ID );
 		$group        = $provider->get_translation_group( $post->ID );
 		$group_ids    = array_map(
 			static function ( array $item ): int {
@@ -273,7 +274,11 @@ final class Repository {
 			'og_title'           => $meta['og_title'],
 			'og_description'     => $meta['og_description'],
 			'og_image'           => $meta['og_image'],
-			'completeness'       => $completeness['score'],
+			'completeness'       => null !== $seo_scores['seo'] ? (int) $seo_scores['seo'] : $completeness['score'],
+			'seo_score'          => $seo_scores['seo'],
+			'seo_score_label'    => (string) $seo_scores['label'],
+			'readability_score'  => $seo_scores['readability'],
+			'seo_no_focus'       => (bool) $seo_scores['no_focus'],
 			'missing'            => $completeness['missing'],
 			'translation_group'  => $group_ids,
 			'seo_adapter'        => $adapter->get_id(),

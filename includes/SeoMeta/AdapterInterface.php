@@ -34,4 +34,16 @@ interface AdapterInterface {
 	 * @param array<string, mixed> $fields Allowed keys match read() output.
 	 */
 	public function write( int $post_id, array $fields ): bool;
+
+	/**
+	 * SEO plugin analysis scores for a post (not field completeness).
+	 *
+	 * @return array{
+	 *     seo: int|null,
+	 *     readability: int|null,
+	 *     label: string,
+	 *     no_focus: bool
+	 * }
+	 */
+	public function read_scores( int $post_id ): array;
 }

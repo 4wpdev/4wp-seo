@@ -42,7 +42,7 @@ final class Notices {
 		if ( ! InventoryModule::get_instance()->is_enabled() && $this->is_seo_admin_screen() ) {
 			$this->render_notice(
 				'info',
-				__( 'SEO inventory REST API is disabled. Enable it under 4wp SEO → Settings.', '4wp-seo-helper' )
+				__( 'SEO inventory REST API is disabled. Enable it under 4WP SEO → Settings.', '4wp-seo-helper' )
 			);
 		}
 	}
@@ -50,7 +50,16 @@ final class Notices {
 	private function is_seo_admin_screen(): bool {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin screen detection.
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
-		return in_array( $page, [ Menu::PAGE_SLUG, Menu::INVENTORY_PAGE_SLUG ], true );
+		return in_array(
+			$page,
+			[
+				Menu::PAGE_SLUG,
+				Menu::SETTINGS_PAGE_SLUG,
+				Menu::GSC_PAGE_SLUG,
+				Menu::INVENTORY_PAGE_SLUG,
+			],
+			true
+		);
 	}
 
 	private function render_notice( string $type, string $message ): void {

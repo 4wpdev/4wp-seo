@@ -70,6 +70,65 @@ final class AioseoAdapter implements AdapterInterface {
 		return true;
 	}
 
+	public function read_scores( int $post_id ): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'aioseo_posts';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+			return [
+				'seo'         => null,
+				'readability' => null,
+				'label'       => '',
+				'no_focus'    => false,
+			];
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT seo_score, keyphrases FROM {$table} WHERE post_id = %d LIMIT 1",
+				$post_id
+			),
+			ARRAY_A
+		);
+
+		$seo      = null;
+		$no_focus = true;
+		$label    = __( 'No focus keyphrase', '4wp-seo-helper' );
+
+		if ( is_array( $row ) ) {
+			if ( isset( $row['seo_score'] ) && is_numeric( $row['seo_score'] ) ) {
+				$seo = (int) $row['seo_score'];
+			}
+
+			$keyphrases = json_decode( (string) ( $row['keyphrases'] ?? '' ), true );
+			if ( is_array( $keyphrases ) ) {
+				$focus = trim( (string) ( $keyphrases['focus']['keyphrase'] ?? '' ) );
+				if ( '' !== $focus ) {
+					$no_focus = false;
+				}
+			}
+		}
+
+		if ( ! $no_focus && null !== $seo ) {
+			if ( $seo >= 80 ) {
+				$label = __( 'Good', '4wp-seo-helper' );
+			} elseif ( $seo >= 50 ) {
+				$label = __( 'OK', '4wp-seo-helper' );
+			} else {
+				$label = __( 'Needs improvement', '4wp-seo-helper' );
+			}
+		}
+
+		return [
+			'seo'           => $seo,
+			'readability'   => null,
+			'label'         => $label,
+			'no_focus'      => $no_focus,
+		];
+	}
+
 	/**
 	 * @param array<string, mixed> $raw
 	 * @return array<string, mixed>

@@ -65,6 +65,29 @@ final class YoastAdapter implements AdapterInterface {
 		return true;
 	}
 
+	public function read_scores( int $post_id ): array {
+		$focus     = trim( (string) get_post_meta( $post_id, '_yoast_wpseo_focuskw', true ) );
+		$linkdex   = get_post_meta( $post_id, '_yoast_wpseo_linkdex', true );
+		$content   = get_post_meta( $post_id, '_yoast_wpseo_content_score', true );
+		$no_focus  = '' === $focus;
+		$seo       = ( '' !== (string) $linkdex && is_numeric( $linkdex ) ) ? (int) $linkdex : null;
+		$read      = ( '' !== (string) $content && is_numeric( $content ) ) ? (int) $content : null;
+		$label     = '';
+
+		if ( $no_focus ) {
+			$label = __( 'No focus keyphrase', '4wp-seo-helper' );
+		} elseif ( null !== $seo && class_exists( 'WPSEO_Rank' ) ) {
+			$label = \WPSEO_Rank::from_numeric_score( $seo )->get_label();
+		}
+
+		return [
+			'seo'           => $seo,
+			'readability'   => $read,
+			'label'         => $label,
+			'no_focus'      => $no_focus,
+		];
+	}
+
 	public static function rebuild_indexable( int $post_id ): bool {
 		if ( $post_id <= 0 || ! defined( 'WPSEO_VERSION' ) || ! function_exists( 'YoastSEO' ) ) {
 			return false;

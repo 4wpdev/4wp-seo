@@ -28,6 +28,7 @@ final class Release {
 	private const WPORG_1_0_0_MODULES = [
 		self::MODULE_INVENTORY,
 		self::MODULE_INVENTORY_API,
+		self::MODULE_GSC,
 	];
 
 	/**

@@ -10,6 +10,11 @@ use Forwp\SeoHelper\Inventory\PriorityLabels;
 use Forwp\SeoHelper\Inventory\PriorityQueue;
 use Forwp\SeoHelper\Inventory\Repository;
 use Forwp\SeoHelper\Multilingual\Registry as MultilingualRegistry;
+use Forwp\SeoHelper\Core\Release;
+use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
+use Forwp\SeoHelper\Gsc\Module as GscModule;
+use Forwp\SeoHelper\Gsc\ReportPeriod;
+use Forwp\SeoHelper\Gsc\Repository as GscRepository;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -104,6 +109,7 @@ final class InventoryPage {
 
 		$table = new InventoryListTable( $repository );
 		$table->set_show_language( $show_lang );
+		$table->set_show_gsc_metrics( self::should_show_gsc_metrics() );
 		$table->set_filters( $filters );
 		$table->set_redirect_base(
 			add_query_arg(
@@ -146,7 +152,21 @@ final class InventoryPage {
 			<h1><?php esc_html_e( 'SEO Inventory', '4wp-seo-helper' ); ?></h1>
 			<p>
 				<?php esc_html_e( 'Full list grouped by priority tier (P1 → P2 → P3 → Other). Drag rows to reorder or move between groups. Priority reflects business importance, not SEO score.', '4wp-seo-helper' ); ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::PAGE_SLUG . '&tab=settings' ) ); ?>"><?php esc_html_e( 'Configure tier names', '4wp-seo-helper' ); ?></a>
+				<?php if ( self::should_show_gsc_metrics() ) : ?>
+					<?php
+					printf(
+						' %s',
+						esc_html(
+							sprintf(
+								/* translators: %s: date range label */
+								__( 'GSC clicks/impressions are joined by URL path from synced data (%s).', '4wp-seo-helper' ),
+								ReportPeriod::label()
+							)
+						)
+					);
+					?>
+				<?php endif; ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::SETTINGS_PAGE_SLUG . '&tab=settings' ) ); ?>"><?php esc_html_e( 'Configure tier names', '4wp-seo-helper' ); ?></a>
 				<a class="page-title-action" href="<?php echo esc_url( $export_url ); ?>"><?php esc_html_e( 'Export CSV', '4wp-seo-helper' ); ?></a>
 			</p>
 
@@ -534,8 +554,15 @@ final class InventoryPage {
 	 * @param array<string, mixed> $item
 	 */
 	private static function render_compact_lane_item( array $item ): void {
-		$score = (int) ( $item['completeness'] ?? 0 );
-		$class = $score >= 75 ? 'good' : ( $score >= 50 ? 'medium' : 'low' );
+		$no_focus = ! empty( $item['seo_no_focus'] );
+		$seo      = $item['seo_score'] ?? null;
+		if ( $no_focus && ( null === $seo || 0 === (int) $seo ) ) {
+			$score_label = (string) ( $item['seo_score_label'] ?? __( 'No focus', '4wp-seo-helper' ) );
+			$class       = 'na';
+		} else {
+			$score_label = (string) ( null !== $seo ? (int) $seo : (int) ( $item['completeness'] ?? 0 ) );
+			$class       = (int) $score_label >= 71 ? 'good' : ( (int) $score_label >= 41 ? 'medium' : 'low' );
+		}
 		$title = (string) ( $item['wp_title'] ?? '' );
 		?>
 		<div
@@ -546,7 +573,7 @@ final class InventoryPage {
 				<?php echo esc_html( wp_html_excerpt( $title, 24, '…' ) ); ?>
 			</span>
 			<span class="forwp-seo-priority-chip__score forwp-seo-priority-chip__score--<?php echo esc_attr( $class ); ?>">
-				<?php echo esc_html( (string) $score ); ?>%
+				<?php echo esc_html( $score_label ); ?>
 			</span>
 		</div>
 		<?php
@@ -663,5 +690,27 @@ final class InventoryPage {
 			.forwp-seo-inventory .column-wp_title .toggle-row { display: none !important; }
 		</style>
 		<?php
+	}
+
+	private static function should_show_gsc_metrics(): bool {
+		if ( ! Release::is_module_public( Release::MODULE_GSC ) || ! GscModule::get_instance()->is_enabled() ) {
+			return false;
+		}
+
+		$admin = GscAdmin::get_instance();
+		if ( ! $admin->is_menu_visible() ) {
+			return false;
+		}
+
+		$property = GscAdmin::get_site_property();
+		if ( '' === $property ) {
+			return false;
+		}
+
+		return ( new GscRepository() )->has_fact_period(
+			$property,
+			'web',
+			ReportPeriod::period_key_current()
+		);
 	}
 }

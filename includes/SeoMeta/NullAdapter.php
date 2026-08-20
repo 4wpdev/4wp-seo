@@ -30,6 +30,17 @@ final class NullAdapter implements AdapterInterface {
 		return false;
 	}
 
+	public function read_scores( int $post_id ): array {
+		unset( $post_id );
+
+		return [
+			'seo'           => null,
+			'readability'   => null,
+			'label'         => '',
+			'no_focus'      => false,
+		];
+	}
+
 	/**
 	 * @return array<string, mixed>
 	 */

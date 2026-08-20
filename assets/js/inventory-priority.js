@@ -254,10 +254,10 @@
 	}
 
 	function getScoreClass( score ) {
-		if ( score >= 75 ) {
+		if ( score >= 71 ) {
 			return 'good';
 		}
-		if ( score >= 50 ) {
+		if ( score >= 41 ) {
 			return 'medium';
 		}
 		return 'low';

@@ -22,7 +22,9 @@ A plugin by **[4WP](https://4wp.dev/)**
 
 ### Coming soon (in codebase)
 
-TechArticle schema & blocks, Google Search Console, LLMS.txt, and cross posting ship in future releases. They appear as **Coming soon** in wp-admin; code stays in the plugin for the next version.
+TechArticle schema & blocks, LLMS.txt, and cross posting ship in future releases. They appear as **Coming soon** in wp-admin.
+
+**Google Search Console** is enabled (`Release::MODULE_GSC` in public modules).
 
 ## How it works
 

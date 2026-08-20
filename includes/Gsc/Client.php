@@ -14,6 +14,36 @@ final class Client {
 	private const SITES_ENDPOINT = 'https://searchconsole.googleapis.com/webmasters/v3/sites';
 	private const INSPECTION_ENDPOINT = 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect';
 
+	private const DEFAULT_TIMEOUT = 15;
+
+	private const INSPECTION_TIMEOUT = 60;
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function auth_headers( string $access_token ): array {
+		return [
+			'Authorization' => 'Bearer ' . $access_token,
+			'Content-Type'  => 'application/json',
+		];
+	}
+
+	private function default_timeout(): int {
+		/**
+		 * @param int $seconds Default HTTP timeout for GSC API requests.
+		 */
+		return max( 5, (int) apply_filters( 'forwp_seo_gsc_request_timeout', self::DEFAULT_TIMEOUT ) );
+	}
+
+	private function inspection_timeout(): int {
+		/**
+		 * URL Inspection asks Google to live-check a URL and often exceeds 5s.
+		 *
+		 * @param int $seconds HTTP timeout for urlInspection/index:inspect.
+		 */
+		return max( 15, (int) apply_filters( 'forwp_seo_gsc_inspection_timeout', self::INSPECTION_TIMEOUT ) );
+	}
+
 	public function get_authorization_url( string $client_id, string $redirect_uri, string $state ): string {
 		$params = [
 			'client_id'     => $client_id,
@@ -74,6 +104,7 @@ final class Client {
 				'headers' => [
 					'Authorization' => 'Bearer ' . $access_token,
 				],
+				'timeout' => $this->default_timeout(),
 			]
 		);
 
@@ -89,11 +120,9 @@ final class Client {
 		$response = wp_remote_post(
 			self::INSPECTION_ENDPOINT,
 			[
-				'headers' => [
-					'Authorization' => 'Bearer ' . $access_token,
-					'Content-Type'  => 'application/json',
-				],
+				'headers' => $this->auth_headers( $access_token ),
 				'body'    => wp_json_encode( $body ),
+				'timeout' => $this->inspection_timeout(),
 			]
 		);
 
@@ -101,36 +130,114 @@ final class Client {
 	}
 
 	public function search_analytics( string $access_token, string $site_url, string $url, string $start_date, string $end_date ): array {
-		$endpoint = 'https://searchconsole.googleapis.com/webmasters/v3/sites/' . rawurlencode( $site_url ) . '/searchAnalytics/query';
-		$body = [
-			'startDate' => $start_date,
-			'endDate'   => $end_date,
-			'dimensions' => [ 'page' ],
-			'dimensionFilterGroups' => [
-				[
-					'filters' => [
-						[
-							'dimension'  => 'page',
-							'operator'   => 'equals',
-							'expression' => $url,
+		return $this->search_analytics_query(
+			$access_token,
+			$site_url,
+			[
+				'startDate'  => $start_date,
+				'endDate'    => $end_date,
+				'dimensions' => [ 'page' ],
+				'type'       => 'web',
+				'dimensionFilterGroups' => [
+					[
+						'filters' => [
+							[
+								'dimension'  => 'page',
+								'operator'   => 'equals',
+								'expression' => $url,
+							],
 						],
 					],
 				],
-			],
+			]
+		);
+	}
+
+	/**
+	 * @param array{
+	 *   startDate?: string,
+	 *   endDate?: string,
+	 *   dimensions?: list<string>,
+	 *   type?: string,
+	 *   rowLimit?: int,
+	 *   startRow?: int,
+	 *   dimensionFilterGroups?: list<array<string, mixed>>
+	 * } $args
+	 * @return array<string, mixed>
+	 */
+	public function search_analytics_query( string $access_token, string $site_url, array $args ): array {
+		$body = [
+			'startDate'  => (string) ( $args['startDate'] ?? '' ),
+			'endDate'    => (string) ( $args['endDate'] ?? '' ),
+			'dimensions' => $args['dimensions'] ?? [],
+			'type'       => (string) ( $args['type'] ?? 'web' ),
+			'rowLimit'   => max( 1, min( 25000, (int) ( $args['rowLimit'] ?? 25000 ) ) ),
+			'startRow'   => max( 0, (int) ( $args['startRow'] ?? 0 ) ),
 		];
 
+		if ( ! empty( $args['dimensionFilterGroups'] ) ) {
+			$body['dimensionFilterGroups'] = $args['dimensionFilterGroups'];
+		}
+
 		$response = wp_remote_post(
-			$endpoint,
+			$this->site_endpoint( $site_url, '/searchAnalytics/query' ),
 			[
-				'headers' => [
-					'Authorization' => 'Bearer ' . $access_token,
-					'Content-Type'  => 'application/json',
-				],
+				'headers' => $this->auth_headers( $access_token ),
 				'body'    => wp_json_encode( $body ),
+				'timeout' => $this->default_timeout(),
 			]
 		);
 
 		return $this->parse_json_response( $response );
+	}
+
+	private function site_endpoint( string $site_url, string $resource_path ): string {
+		return self::SITES_ENDPOINT . '/' . rawurlencode( $site_url ) . '/' . ltrim( $resource_path, '/' );
+	}
+
+	/**
+	 * Paginate through all rows for a query (respects API 25k cap per request).
+	 *
+	 * @param array<string, mixed> $args
+	 * @return array{rows:list<array<string, mixed>>, error?: string}
+	 */
+	public function search_analytics_fetch_all( string $access_token, string $site_url, array $args ): array {
+		$all_rows  = [];
+		$start_row = 0;
+		$limit     = max( 1, min( 25000, (int) ( $args['rowLimit'] ?? 25000 ) ) );
+
+		do {
+			$args['startRow'] = $start_row;
+			$args['rowLimit'] = $limit;
+			$response         = $this->search_analytics_query( $access_token, $site_url, $args );
+
+			if ( isset( $response['error'] ) ) {
+				return [
+					'rows'  => $all_rows,
+					'error' => (string) $response['error'],
+				];
+			}
+
+			$batch = $response['rows'] ?? [];
+			if ( ! is_array( $batch ) || empty( $batch ) ) {
+				break;
+			}
+
+			foreach ( $batch as $row ) {
+				if ( is_array( $row ) ) {
+					$all_rows[] = $row;
+				}
+			}
+
+			if ( count( $batch ) < $limit ) {
+				break;
+			}
+
+			$start_row += $limit;
+			usleep( 250000 );
+		} while ( $start_row < 100000 );
+
+		return [ 'rows' => $all_rows ];
 	}
 
 	private function parse_token_response( $response ): array {
