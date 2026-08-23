@@ -86,28 +86,6 @@ final class Admin {
 	}
 
 	public function render_page(): void {
-		if ( ! Module::get_instance()->is_enabled() ) {
-			wp_safe_redirect(
-				add_query_arg(
-					[
-						'page' => Menu::SETTINGS_PAGE_SLUG,
-						'tab'  => 'settings',
-					],
-					admin_url( 'admin.php' )
-				)
-			);
-			exit;
-		}
-
-		$redirect_tab = $this->handle_data_post();
-		if ( ! is_string( $redirect_tab ) ) {
-			$redirect_tab = $this->handle_sync_post();
-		}
-		if ( is_string( $redirect_tab ) ) {
-			wp_safe_redirect( $redirect_tab );
-			exit;
-		}
-
 		$site         = get_option( self::OPTION_SITE, '' );
 		$is_connected = $this->is_connected();
 		$tab          = $this->get_active_tab();
@@ -513,6 +491,25 @@ final class Admin {
 		}
 
 		return null;
+	}
+
+	public function process_page_requests(): ?string {
+		if ( ! Module::get_instance()->is_enabled() ) {
+			return add_query_arg(
+				[
+					'page' => Menu::SETTINGS_PAGE_SLUG,
+					'tab'  => 'settings',
+				],
+				admin_url( 'admin.php' )
+			);
+		}
+
+		$redirect = $this->handle_data_post();
+		if ( ! is_string( $redirect ) ) {
+			$redirect = $this->handle_sync_post();
+		}
+
+		return $redirect;
 	}
 
 	private function handle_data_post(): ?string {
