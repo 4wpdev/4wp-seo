@@ -51,9 +51,11 @@ final class TechArticle {
 			return;
 		}
 
-		echo '<script type="application/ld+json">';
-		echo wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-		echo '</script>' . PHP_EOL;
+		wp_print_inline_script_tag(
+			wp_json_encode( $schema, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ),
+			[ 'type' => 'application/ld+json' ]
+		);
+		echo PHP_EOL;
 	}
 
 	private function should_output_schema( \WP_Post $post ): bool {

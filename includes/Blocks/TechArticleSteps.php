@@ -61,7 +61,7 @@ final class TechArticleSteps {
 			return '';
 		}
 
-		return '<div class="forwp-seo-techarticle-steps">' . $content . '</div>';
+		return '<div class="forwp-seo-techarticle-steps">' . wp_kses_post( $content ) . '</div>';
 	}
 
 	public function render_step_block( array $attributes, string $content ): string {
@@ -69,7 +69,7 @@ final class TechArticleSteps {
 			return '';
 		}
 
-		return '<div class="forwp-seo-techarticle-step">' . $content . '</div>';
+		return '<div class="forwp-seo-techarticle-step">' . wp_kses_post( $content ) . '</div>';
 	}
 }
 

@@ -2,11 +2,11 @@
 /**
  * Plugin Name: 4WP SEO Helper
  * Description: SEO Inventory for WordPress — audit and prioritize SEO fields site-wide. Works with Yoast SEO and All in One SEO.
- * Version: 1.1.0
+ * Version: 1.0.1
  * Author: 4wp.dev
  * Requires PHP: 8.0
  * Requires at least: 6.0
- * Tested up to:      7.0
+ * Tested up to:      7.1
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       4wp-seo-helper
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FORWP_SEO_HELPER_VERSION', '1.0.0' );
+define( 'FORWP_SEO_HELPER_VERSION', '1.0.1' );
 define( 'FORWP_SEO_HELPER_FILE', __FILE__ );
 define( 'FORWP_SEO_HELPER_PATH', plugin_dir_path( __FILE__ ) );
 define( 'FORWP_SEO_HELPER_URL', plugin_dir_url( __FILE__ ) );

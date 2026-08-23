@@ -145,9 +145,13 @@ final class TechArticleWrappers {
 			return '';
 		}
 
-		$extra = '';
+		$classes = [ $class_name ];
 		if ( ! empty( $attributes['className'] ) && is_string( $attributes['className'] ) ) {
-			$extra = ' ' . trim( $attributes['className'] );
+			foreach ( preg_split( '/\s+/', trim( $attributes['className'] ) ) as $custom_class ) {
+				if ( '' !== $custom_class ) {
+					$classes[] = sanitize_html_class( $custom_class );
+				}
+			}
 		}
 
 		$data_attrs = '';
@@ -156,12 +160,11 @@ final class TechArticleWrappers {
 		}
 
 		return sprintf(
-			'<%1$s class="%2$s%3$s"%4$s>%5$s</%1$s>',
+			'<%1$s class="%2$s"%3$s>%4$s</%1$s>',
 			$tag,
-			esc_attr( $class_name ),
-			esc_attr( $extra ),
+			esc_attr( implode( ' ', array_filter( $classes ) ) ),
 			$data_attrs,
-			$content
+			wp_kses_post( $content )
 		);
 	}
 

@@ -5,7 +5,6 @@
 
 README.md
 docs/
-scripts/
 .editorconfig
 .phpcs.xml
 .phpcs.xml.dist

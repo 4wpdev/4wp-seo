@@ -43,9 +43,11 @@ final class ExternalEntities {
 			return;
 		}
 
-		echo '<script type="application/ld+json">';
-		echo wp_json_encode( $output, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-		echo '</script>' . PHP_EOL;
+		wp_print_inline_script_tag(
+			wp_json_encode( $output, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ),
+			[ 'type' => 'application/ld+json' ]
+		);
+		echo PHP_EOL;
 	}
 }
 

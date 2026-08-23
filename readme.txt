@@ -2,9 +2,9 @@
 Contributors: 4wpdev, anatolikkk
 Tags: seo, inventory, yoast, meta description, audit
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,24 @@ No. **4WP SEO Helper** runs on its own. The REST API can integrate with external
 
 No. Yoast SEO and All in One SEO are separate products. **4WP** is our project brand name—**WP** appears only as part of that name and is not a reference to WordPress. This plugin is not affiliated with, endorsed, or sponsored by WordPress.
 
+== External services ==
+
+This plugin optionally connects to **Google APIs** when a site administrator enables **Google Search Console** integration under **4WP SEO → Settings**.
+
+**Google OAuth 2.0** (`accounts.google.com`, `oauth2.googleapis.com`)
+
+Used so an administrator can connect their Google account to WordPress. When the admin clicks **Connect Google**, the plugin redirects to Google sign-in and exchanges an authorization code for access and refresh tokens. Tokens are stored in the WordPress database and used only for Search Console features initiated in wp-admin.
+
+**Google Search Console API** (`searchconsole.googleapis.com`)
+
+Used to list verified properties, inspect URLs, and fetch Search Analytics for the connected property. The plugin sends the selected property URL, requested page URLs, and date ranges when an administrator runs sync, URL inspection, or live analytics tools in wp-admin. Synced metrics are stored locally in WordPress for reporting screens.
+
+No Google API calls are made until an administrator configures OAuth credentials and connects an account. The plugin does not send site visitor or front-end user data to Google.
+
+* [Google Terms of Service](https://policies.google.com/terms)
+* [Google Privacy Policy](https://policies.google.com/privacy)
+* [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy)
+
 == Screenshots ==
 
 1. SEO Inventory table with completeness scores and P1–P3 priority lanes
@@ -101,6 +119,9 @@ No. Yoast SEO and All in One SEO are separate products. **4WP** is our project b
 4. Inventory API connection details and sync token
 
 == Changelog ==
+
+= 1.0.1 =
+* Plugin Review fixes: enqueue inventory admin CSS, safe JSON-LD output, block render escaping, Google API disclosure in readme.
 
 = 1.0.0 =
 * Initial WordPress.org release: **SEO Inventory** admin table with filters, CSV export, and quick edit.
@@ -112,6 +133,9 @@ No. Yoast SEO and All in One SEO are separate products. **4WP** is our project b
 * Future modules (TechArticle, LLMS.txt, cross posting) visible as Coming soon in admin.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Plugin Review compliance fixes for CSS enqueue, JSON-LD escaping, and external services documentation.
 
 = 1.0.0 =
 Initial release — SEO Inventory and REST API for Yoast and All in One SEO sites.
