@@ -32,6 +32,7 @@ final class PageRenderer {
 				<?php foreach ( $extra_query as $key => $value ) : ?>
 					<input type="hidden" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $value ); ?>" />
 				<?php endforeach; ?>
+				<?php wp_nonce_field( ReportPeriod::RANGE_NONCE_ACTION, 'forwp_seo_gsc_range_nonce', false, true ); ?>
 				<div class="forwp-seo-gsc-range-bar__row">
 					<div class="forwp-seo-gsc-range-bar__field">
 						<label class="forwp-seo-gsc-range-bar__label" for="forwp-seo-gsc-range">

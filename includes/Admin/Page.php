@@ -46,31 +46,11 @@ final class Page {
 		return $tabs;
 	}
 
-	/**
-	 * Handle Settings POST and redirects before any admin HTML is sent.
-	 */
-	public static function handle_load(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-<<<<<<< HEAD
-		$gsc_redirect = GscAdmin::get_instance()->handle_connect_post();
-		if ( is_string( $gsc_redirect ) ) {
-			wp_safe_redirect( $gsc_redirect );
-			exit;
-		}
-
-		self::handle_settings_post();
-	}
-
 	public static function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-=======
->>>>>>> origin/main
 		$tab = self::get_active_tab();
 
 		$is_connected         = GscAdmin::get_instance()->is_connected();

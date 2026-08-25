@@ -65,6 +65,12 @@
 			if ( ! url.searchParams.get( 'tab' ) ) {
 				url.searchParams.set( 'tab', 'overview' );
 			}
+			var nonceInput = form ? form.querySelector( 'input[name="forwp_seo_gsc_range_nonce"]' ) : null;
+			if ( nonceInput && nonceInput.value ) {
+				url.searchParams.set( 'forwp_seo_gsc_range_nonce', nonceInput.value );
+			} else {
+				url.searchParams.delete( 'forwp_seo_gsc_range_nonce' );
+			}
 			url.searchParams.delete( 'orderby' );
 			url.searchParams.delete( 'order' );
 			window.location.assign( url.toString() );

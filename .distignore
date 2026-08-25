@@ -5,6 +5,7 @@
 
 README.md
 docs/
+.wordpress-org/
 .editorconfig
 .phpcs.xml
 .phpcs.xml.dist

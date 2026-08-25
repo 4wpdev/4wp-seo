@@ -87,41 +87,9 @@ final class Admin {
 		return $this->get_access_token();
 	}
 
-<<<<<<< HEAD
-	/**
-	 * Handle GSC POST and redirects before any admin HTML is sent.
-	 */
-	public function handle_page_load(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		if ( ! Module::get_instance()->is_enabled() ) {
-			wp_safe_redirect(
-				add_query_arg(
-					[
-						'page' => Menu::SETTINGS_PAGE_SLUG,
-						'tab'  => 'settings',
-					],
-					admin_url( 'admin.php' )
-				)
-			);
-			exit;
-		}
-
-		$redirect = $this->handle_data_post();
-		if ( ! is_string( $redirect ) ) {
-			$redirect = $this->handle_sync_post();
-		}
-		if ( is_string( $redirect ) ) {
-			wp_safe_redirect( $redirect );
-			exit;
-		}
-	}
-
-=======
->>>>>>> origin/main
 	public function render_page(): void {
+		ReportPeriod::maybe_save_from_request();
+
 		$site         = get_option( self::OPTION_SITE, '' );
 		$is_connected = $this->is_connected();
 		$tab          = $this->get_active_tab();

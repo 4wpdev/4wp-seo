@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class ReportPeriod {
 	public const OPTION_DAYS = 'forwp_seo_gsc_report_days';
 
+	public const RANGE_NONCE_ACTION = 'forwp_seo_gsc_report_range';
+
 	public const DEFAULT_DAYS = 28;
 
 	public const LAG_DAYS = 3;
@@ -41,19 +43,47 @@ final class ReportPeriod {
 		update_option( self::OPTION_DAYS, (string) self::sanitize_days( $days ) );
 	}
 
+	/**
+	 * Persist range from a verified admin GET request (GSC range bar).
+	 */
+	public static function maybe_save_from_request(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Tab slug selects whether range applies.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : Admin::TAB_OVERVIEW;
+		if ( in_array( $tab, [ Admin::TAB_INSPECTION, Admin::TAB_SYNC ], true ) ) {
+			return;
+		}
+
+		if ( ! isset( $_GET['range'] ) ) {
+			return;
+		}
+
+		$nonce = isset( $_GET['forwp_seo_gsc_range_nonce'] )
+			? sanitize_text_field( wp_unslash( (string) $_GET['forwp_seo_gsc_range_nonce'] ) )
+			: '';
+
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, self::RANGE_NONCE_ACTION ) ) {
+			return;
+		}
+
+		$days = self::sanitize_days( (int) wp_unslash( $_GET['range'] ) );
+		if ( self::get_days() !== $days ) {
+			self::save_days( $days );
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+	}
+
 	public static function resolve_from_request( ?string $tab = null ): int {
 		if ( null !== $tab && in_array( $tab, [ Admin::TAB_INSPECTION, Admin::TAB_SYNC ], true ) ) {
 			return self::get_days();
 		}
 
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only range picker.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only; persistence requires nonce in maybe_save_from_request().
 		if ( isset( $_GET['range'] ) ) {
-			$days = self::sanitize_days( (int) wp_unslash( $_GET['range'] ) );
-			if ( self::get_days() !== $days ) {
-				self::save_days( $days );
-			}
-
-			return $days;
+			return self::sanitize_days( (int) wp_unslash( $_GET['range'] ) );
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 

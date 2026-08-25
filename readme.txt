@@ -4,7 +4,7 @@ Tags: seo, inventory, yoast, meta description, audit
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,6 +120,9 @@ No Google API calls are made until an administrator configures OAuth credentials
 
 == Changelog ==
 
+= 1.0.2 =
+* Security: GSC date range preference saves only with nonce + manage_options (fixes CSRF on ReportPeriod range GET).
+
 = 1.0.1 =
 * Plugin Review fixes: enqueue inventory admin CSS, safe JSON-LD output, block render escaping, Google API disclosure in readme.
 
@@ -133,6 +136,9 @@ No Google API calls are made until an administrator configures OAuth credentials
 * Future modules (TechArticle, LLMS.txt, cross posting) visible as Coming soon in admin.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Security fix for GSC report range preference (nonce required before saving site option).
 
 = 1.0.1 =
 Plugin Review compliance fixes for CSS enqueue, JSON-LD escaping, and external services documentation.

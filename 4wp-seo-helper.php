@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FORWP_SEO_HELPER_VERSION', '1.0.1' );
+define( 'FORWP_SEO_HELPER_VERSION', '1.2.0' );
 define( 'FORWP_SEO_HELPER_FILE', __FILE__ );
 define( 'FORWP_SEO_HELPER_PATH', plugin_dir_path( __FILE__ ) );
 define( 'FORWP_SEO_HELPER_URL', plugin_dir_url( __FILE__ ) );
