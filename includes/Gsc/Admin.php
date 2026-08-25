@@ -87,6 +87,7 @@ final class Admin {
 		return $this->get_access_token();
 	}
 
+<<<<<<< HEAD
 	/**
 	 * Handle GSC POST and redirects before any admin HTML is sent.
 	 */
@@ -118,6 +119,8 @@ final class Admin {
 		}
 	}
 
+=======
+>>>>>>> origin/main
 	public function render_page(): void {
 		$site         = get_option( self::OPTION_SITE, '' );
 		$is_connected = $this->is_connected();
@@ -667,6 +670,25 @@ final class Admin {
 		}
 
 		return null;
+	}
+
+	public function process_page_requests(): ?string {
+		if ( ! Module::get_instance()->is_enabled() ) {
+			return add_query_arg(
+				[
+					'page' => Menu::SETTINGS_PAGE_SLUG,
+					'tab'  => 'settings',
+				],
+				admin_url( 'admin.php' )
+			);
+		}
+
+		$redirect = $this->handle_data_post();
+		if ( ! is_string( $redirect ) ) {
+			$redirect = $this->handle_sync_post();
+		}
+
+		return $redirect;
 	}
 
 	private function handle_data_post(): ?string {

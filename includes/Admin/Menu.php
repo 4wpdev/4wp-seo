@@ -45,6 +45,7 @@ final class Menu {
 	private function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_init', [ $this, 'handle_legacy_routes' ] );
+		add_action( 'admin_init', [ $this, 'handle_admin_form_posts' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
 		add_filter(
 			'set_screen_option_' . self::INVENTORY_PER_PAGE_OPTION,
@@ -163,6 +164,32 @@ final class Menu {
 					admin_url( 'admin.php' )
 				)
 			);
+			exit;
+		}
+	}
+
+	public function handle_admin_form_posts(): void {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Route detection only.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		$redirect = null;
+
+		if ( self::SETTINGS_PAGE_SLUG === $page ) {
+			$redirect = Page::process_settings_post();
+			if ( ! is_string( $redirect ) ) {
+				$redirect = GscAdmin::get_instance()->handle_connect_post();
+			}
+		} elseif ( self::GSC_PAGE_SLUG === $page ) {
+			$redirect = GscAdmin::get_instance()->process_page_requests();
+		}
+
+		if ( is_string( $redirect ) && '' !== $redirect ) {
+			wp_safe_redirect( $redirect );
 			exit;
 		}
 	}

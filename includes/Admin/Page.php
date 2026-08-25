@@ -54,6 +54,7 @@ final class Page {
 			return;
 		}
 
+<<<<<<< HEAD
 		$gsc_redirect = GscAdmin::get_instance()->handle_connect_post();
 		if ( is_string( $gsc_redirect ) ) {
 			wp_safe_redirect( $gsc_redirect );
@@ -68,6 +69,8 @@ final class Page {
 			return;
 		}
 
+=======
+>>>>>>> origin/main
 		$tab = self::get_active_tab();
 
 		$is_connected         = GscAdmin::get_instance()->is_connected();
@@ -472,13 +475,13 @@ final class Page {
 		<?php
 	}
 
-	private static function handle_settings_post(): void {
+	public static function process_settings_post(): ?string {
 		if ( empty( $_POST['forwp_seo_settings_nonce'] ) ) {
-			return;
+			return null;
 		}
 
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['forwp_seo_settings_nonce'] ) ), 'forwp_seo_settings' ) ) {
-			return;
+			return null;
 		}
 
 		$tab   = self::TAB_SETTINGS;
@@ -528,19 +531,18 @@ final class Page {
 			$saved = 'priority';
 		}
 
-		if ( false !== $saved ) {
-			wp_safe_redirect(
-				add_query_arg(
-					[
-						'page'  => Menu::SETTINGS_PAGE_SLUG,
-						'tab'   => $tab,
-						'saved' => $saved,
-					],
-					admin_url( 'admin.php' )
-				)
-			);
-			exit;
+		if ( false === $saved ) {
+			return null;
 		}
+
+		return add_query_arg(
+			[
+				'page'  => Menu::SETTINGS_PAGE_SLUG,
+				'tab'   => $tab,
+				'saved' => $saved,
+			],
+			admin_url( 'admin.php' )
+		);
 	}
 
 	private static function render_notices(): void {
