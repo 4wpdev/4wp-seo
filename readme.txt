@@ -18,7 +18,7 @@ Version **2.0** adds a full **Google Search Console** workspace inside wp-admin:
 
 Built for teams that use **Yoast SEO** or **All in One SEO** and need one place to audit SEO fields across posts, pages, and public custom post types.
 
-A plugin by [4wp.dev](https://4wp.dev/).
+A plugin by [4wp.dev](https://4wp.dev/). Overview and setup notes: [4WP SEO Helper on 4wp.dev](https://4wp.dev/plugin/4wp-seo-helper/).
 
 = Perfect for =
 
