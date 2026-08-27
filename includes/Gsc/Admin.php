@@ -28,6 +28,9 @@ final class Admin {
 	private const OPTION_TOKEN_EXPIRES = 'forwp_seo_gsc_token_expires';
 	private const OPTION_SITE = 'forwp_seo_gsc_site';
 
+	/** @var array<string, mixed>|null */
+	private ?array $property_access_cache = null;
+
 	public static function get_instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -45,8 +48,60 @@ final class Admin {
 		return $this->get_access_token() !== '';
 	}
 
+	/**
+	 * Remove OAuth tokens and selected property (keeps Client ID / Secret).
+	 */
+	public function disconnect(): void {
+		delete_option( self::OPTION_ACCESS_TOKEN );
+		delete_option( self::OPTION_REFRESH_TOKEN );
+		delete_option( self::OPTION_TOKEN_EXPIRES );
+		delete_option( self::OPTION_SITE );
+		delete_transient( 'forwp_seo_gsc_last_inspection' );
+		delete_transient( 'forwp_seo_gsc_last_analytics' );
+		$this->reset_property_access_cache();
+	}
+
 	public function has_property(): bool {
-		return '' !== get_option( self::OPTION_SITE, '' );
+		return (bool) ( $this->get_property_access_state()['ready'] ?? false );
+	}
+
+	public function get_property_access_message(): string {
+		return (string) ( $this->get_property_access_state()['message'] ?? '' );
+	}
+
+	/**
+	 * @return array{ready:bool,status:string,matched:?string,properties:list<string>,error:string,users_url:string,site_label:string,message:string}
+	 */
+	public function get_property_access_state(): array {
+		if ( null !== $this->property_access_cache ) {
+			return $this->property_access_cache;
+		}
+
+		if ( ! $this->is_connected() ) {
+			$this->property_access_cache = PropertyAccess::disconnected_state();
+			return $this->property_access_cache;
+		}
+
+		$fetch  = $this->fetch_properties();
+		$saved  = (string) get_option( self::OPTION_SITE, '' );
+		$state  = PropertyAccess::evaluate( $fetch['properties'], $fetch['error'], $saved );
+		$matched = is_string( $state['matched'] ?? null ) ? (string) $state['matched'] : '';
+
+		if ( $state['ready'] && '' !== $matched ) {
+			if ( $saved !== $matched ) {
+				update_option( self::OPTION_SITE, $matched );
+			}
+		} elseif ( '' !== $saved ) {
+			delete_option( self::OPTION_SITE );
+		}
+
+		$this->property_access_cache = $state;
+
+		return $this->property_access_cache;
+	}
+
+	public function reset_property_access_cache(): void {
+		$this->property_access_cache = null;
 	}
 
 	public function is_menu_visible(): bool {
@@ -460,6 +515,13 @@ final class Admin {
 						</a>
 					<?php elseif ( $is_connected ) : ?>
 						<span class="forwp-seo-badge forwp-seo-badge--live"><?php esc_html_e( 'Connected', '4wp-seo-helper' ); ?></span>
+						<form method="post" class="forwp-seo-inline-form" onsubmit="return confirm('<?php echo esc_js( __( 'Disconnect Google Search Console from this site?', '4wp-seo-helper' ) ); ?>');">
+							<?php wp_nonce_field( 'forwp_seo_gsc_settings', 'forwp_seo_gsc_nonce' ); ?>
+							<input type="hidden" name="forwp_seo_gsc_context" value="gsc" />
+							<button type="submit" name="forwp_seo_gsc_disconnect" class="button">
+								<?php esc_html_e( 'Disconnect', '4wp-seo-helper' ); ?>
+							</button>
+						</form>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -467,15 +529,17 @@ final class Admin {
 
 		<?php if ( $is_connected ) : ?>
 			<?php
-			$properties    = $this->get_properties();
-			$manual_mode   = PropertyResolver::allows_manual_property_selection();
-			$matched_site  = ! empty( $properties ) ? PropertyResolver::match_site_property( $properties ) : null;
-			$sync_running = Sync::get_instance()->is_sync_in_progress( $site );
+			$access_state = $this->get_property_access_state();
+			$properties   = $access_state['properties'];
+			$properties_error = $access_state['error'];
+			$manual_mode  = PropertyResolver::allows_manual_property_selection();
+			$matched_site = is_string( $access_state['matched'] ?? null ) ? (string) $access_state['matched'] : null;
+			$site         = $matched_site ?? $site;
+			$sync_running = $access_state['ready'] ? Sync::get_instance()->is_sync_in_progress( $site ) : false;
 			$storage      = ( new Repository() )->get_storage_counts();
 
-			if ( ! $manual_mode && $matched_site && $matched_site !== $site ) {
-				update_option( self::OPTION_SITE, $matched_site );
-				$site = $matched_site;
+			if ( ! $access_state['ready'] && PropertyAccess::STATUS_OK !== $access_state['status'] ) {
+				$this->render_property_access_callout( $access_state );
 			}
 			?>
 			<div class="forwp-seo-panel">
@@ -499,8 +563,20 @@ final class Admin {
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Search Console property', '4wp-seo-helper' ); ?></th>
 							<td>
-								<?php if ( empty( $properties ) ) : ?>
-									<p class="forwp-seo-admin-muted"><?php esc_html_e( 'No properties found or API error.', '4wp-seo-helper' ); ?></p>
+								<?php if ( '' !== $properties_error ) : ?>
+									<p class="forwp-seo-connection-line forwp-seo-connection-line--warn">
+										<?php echo esc_html( $properties_error ); ?>
+									</p>
+									<p class="forwp-seo-admin-muted">
+										<?php esc_html_e( 'OAuth can succeed even when the Search Console API call fails. Enable the API in Google Cloud, confirm this Google account has access to the property, then disconnect and connect again.', '4wp-seo-helper' ); ?>
+									</p>
+								<?php elseif ( empty( $properties ) ) : ?>
+									<p class="forwp-seo-connection-line forwp-seo-connection-line--warn">
+										<?php echo esc_html( $access_state['message'] ); ?>
+									</p>
+									<p class="forwp-seo-admin-muted">
+										<?php esc_html_e( 'Verify the site is added in Google Search Console and that you connected with the same Google account.', '4wp-seo-helper' ); ?>
+									</p>
 								<?php elseif ( $manual_mode ) : ?>
 									<select name="forwp_seo_gsc_site" class="regular-text">
 										<?php foreach ( $properties as $property ) : ?>
@@ -523,14 +599,19 @@ final class Admin {
 									</p>
 								<?php else : ?>
 									<p class="forwp-seo-connection-line forwp-seo-connection-line--warn">
-										<?php esc_html_e( 'No Search Console property matches this site domain.', '4wp-seo-helper' ); ?>
+										<?php echo esc_html( $access_state['message'] ); ?>
 									</p>
 									<ul class="forwp-seo-gsc-property-list">
 										<?php foreach ( $properties as $property ) : ?>
 											<li><code><?php echo esc_html( $property ); ?></code></li>
 										<?php endforeach; ?>
 									</ul>
-									<p class="forwp-seo-admin-muted"><?php esc_html_e( 'Enable Local / staging mode above to pick a property manually.', '4wp-seo-helper' ); ?></p>
+									<p class="forwp-seo-admin-muted"><?php esc_html_e( 'Ask the property owner to grant your Google account access, or enable Local / staging mode to pick another property manually.', '4wp-seo-helper' ); ?></p>
+									<p class="forwp-seo-inline-actions">
+										<a class="button button-secondary" href="<?php echo esc_url( (string) $access_state['users_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+											<?php esc_html_e( 'Request access in Search Console', '4wp-seo-helper' ); ?>
+										</a>
+									</p>
 								<?php endif; ?>
 							</td>
 						</tr>
@@ -541,6 +622,7 @@ final class Admin {
 				</form>
 			</div>
 
+			<?php if ( $access_state['ready'] ) : ?>
 			<?php
 			PageRenderer::render_clear_data_panel(
 				$sync_running,
@@ -549,7 +631,42 @@ final class Admin {
 				'forwp_seo_gsc_nonce'
 			);
 			?>
+			<?php endif; ?>
 		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * @param array{ready:bool,status:string,matched:?string,properties:list<string>,error:string,users_url:string,site_label:string,message:string} $access
+	 */
+	private function render_property_access_callout( array $access ): void {
+		if ( PropertyAccess::STATUS_PICK_PROPERTY === $access['status'] ) {
+			return;
+		}
+
+		$users_url = (string) ( $access['users_url'] ?? PropertyAccess::users_url() );
+		$message   = (string) ( $access['message'] ?? '' );
+		?>
+		<div class="forwp-seo-panel forwp-seo-panel--nested forwp-seo-gsc-access-callout">
+			<h2><?php esc_html_e( 'Search Console access required', '4wp-seo-helper' ); ?></h2>
+			<p class="forwp-seo-connection-line forwp-seo-connection-line--warn">
+				<?php echo esc_html( $message ); ?>
+			</p>
+			<p class="forwp-seo-admin-muted">
+				<?php
+				printf(
+					/* translators: %s: site domain */
+					esc_html__( 'The Google account you connected must be a verified owner or user on the Search Console property for %s before sync and GSC tools can run.', '4wp-seo-helper' ),
+					esc_html( (string) ( $access['site_label'] ?? '' ) )
+				);
+				?>
+			</p>
+			<p class="forwp-seo-inline-actions">
+				<a class="button button-primary" href="<?php echo esc_url( $users_url ); ?>" target="_blank" rel="noopener noreferrer">
+					<?php esc_html_e( 'Request access in Search Console', '4wp-seo-helper' ); ?>
+				</a>
+			</p>
+		</div>
 		<?php
 	}
 
@@ -649,14 +766,28 @@ final class Admin {
 		if ( isset( $_POST['forwp_seo_gsc_save_property'] ) ) {
 			$local_dev = ! empty( $_POST['forwp_seo_gsc_local_dev_mode'] );
 			update_option( Module::OPTION_LOCAL_DEV_MODE, $local_dev ? '1' : '0' );
+			$this->reset_property_access_cache();
 
 			if ( $local_dev ) {
-				update_option( self::OPTION_SITE, esc_url_raw( wp_unslash( (string) ( $_POST['forwp_seo_gsc_site'] ?? '' ) ) ) );
-			} else {
-				$this->sync_property_for_site();
+				$selected = $this->sanitize_property_value( wp_unslash( (string) ( $_POST['forwp_seo_gsc_site'] ?? '' ) ) );
+				$fetch    = $this->fetch_properties();
+				$state    = PropertyAccess::evaluate( $fetch['properties'], $fetch['error'], $selected );
+				if ( ! $state['ready'] ) {
+					delete_option( self::OPTION_SITE );
+					return add_query_arg( 'gsc_error', rawurlencode( (string) $state['message'] ), $redirect_url );
+				}
+				update_option( self::OPTION_SITE, $selected );
+			} elseif ( ! $this->has_property() ) {
+				delete_option( self::OPTION_SITE );
+				return add_query_arg( 'gsc_error', rawurlencode( $this->get_property_access_message() ), $redirect_url );
 			}
 
 			return add_query_arg( 'gsc_saved', 'property', $redirect_url );
+		}
+
+		if ( isset( $_POST['forwp_seo_gsc_disconnect'] ) ) {
+			$this->disconnect();
+			return add_query_arg( 'gsc_disconnected', '1', $redirect_url );
 		}
 
 		$clear_redirect = $this->process_clear_data_request(
@@ -819,7 +950,17 @@ final class Admin {
 		}
 		update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $token['expires_in'] ?? 0 ) );
 
-		$this->sync_property_for_site();
+		$this->reset_property_access_cache();
+		$access = $this->get_property_access_state();
+		if ( ! $access['ready'] ) {
+			delete_option( self::OPTION_SITE );
+			$this->redirect_after_oauth(
+				$return_url,
+				[
+					'gsc_error' => (string) $access['message'],
+				]
+			);
+		}
 
 		$this->redirect_after_oauth( $return_url, [ 'gsc_connected' => '1' ] );
 	}
@@ -1078,7 +1219,17 @@ final class Admin {
 		}
 		update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $token['expires_in'] ?? 0 ) );
 
-		$this->sync_property_for_site();
+		$this->reset_property_access_cache();
+		$access = $this->get_property_access_state();
+		if ( ! $access['ready'] ) {
+			delete_option( self::OPTION_SITE );
+			$this->redirect_after_oauth(
+				$return_url,
+				[
+					'gsc_error' => (string) $access['message'],
+				]
+			);
+		}
 
 		$this->redirect_after_oauth( $return_url, [ 'gsc_connected' => '1' ] );
 	}
@@ -1166,26 +1317,51 @@ final class Admin {
 	}
 
 	private function get_properties(): array {
+		return $this->fetch_properties()['properties'];
+	}
+
+	/**
+	 * @return array{properties: list<string>, error: string}
+	 */
+	private function fetch_properties(): array {
 		$token = $this->get_access_token();
 		if ( '' === $token ) {
-			return [];
+			return [
+				'properties' => [],
+				'error'      => __( 'Could not obtain a Google access token. Disconnect and connect again.', '4wp-seo-helper' ),
+			];
 		}
 
-		$client = new Client();
+		$client   = new Client();
 		$response = $client->list_sites( $token );
 
 		if ( isset( $response['error'] ) ) {
-			return [];
+			return [
+				'properties' => [],
+				'error'      => (string) $response['error'],
+			];
 		}
 
 		$properties = [];
 		foreach ( $response['siteEntry'] ?? [] as $entry ) {
 			if ( ! empty( $entry['siteUrl'] ) ) {
-				$properties[] = $entry['siteUrl'];
+				$properties[] = (string) $entry['siteUrl'];
 			}
 		}
 
-		return $properties;
+		return [
+			'properties' => $properties,
+			'error'      => '',
+		];
+	}
+
+	private function sanitize_property_value( string $value ): string {
+		$value = sanitize_text_field( $value );
+		if ( str_starts_with( $value, 'sc-domain:' ) ) {
+			return $value;
+		}
+
+		return esc_url_raw( $value );
 	}
 
 	private function set_last_inspection( string $url ): void {
@@ -1243,20 +1419,10 @@ final class Admin {
 	}
 
 	private function sync_property_for_site(): bool {
-		if ( PropertyResolver::allows_manual_property_selection() ) {
-			return false;
-		}
+		$this->reset_property_access_cache();
+		$access = $this->get_property_access_state();
 
-		$properties = $this->get_properties();
-		$matched    = PropertyResolver::match_site_property( $properties );
-
-		if ( ! $matched ) {
-			return false;
-		}
-
-		update_option( self::OPTION_SITE, $matched );
-
-		return true;
+		return (bool) ( $access['ready'] ?? false );
 	}
 
 	/**

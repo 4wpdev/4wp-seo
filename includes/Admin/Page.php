@@ -152,7 +152,7 @@ final class Page {
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : self::TAB_SETTINGS;
 
 		if ( ! in_array( $tab, self::get_tabs(), true ) ) {
-			if ( Release::is_module_public( Release::MODULE_GSC ) && ( ! empty( $_GET['gsc_connected'] ) || ! empty( $_GET['gsc_error'] ) || isset( $_GET['gsc_saved'] ) ) ) {
+			if ( Release::is_module_public( Release::MODULE_GSC ) && ( ! empty( $_GET['gsc_connected'] ) || ! empty( $_GET['gsc_disconnected'] ) || ! empty( $_GET['gsc_error'] ) || isset( $_GET['gsc_saved'] ) ) ) {
 				return GscModule::get_instance()->is_enabled() ? self::TAB_GSC : self::TAB_SETTINGS;
 			}
 			return self::TAB_SETTINGS;
@@ -568,6 +568,9 @@ final class Page {
 			}
 			if ( ! empty( $_GET['gsc_connected'] ) ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Google Search Console connected.', '4wp-seo-helper' ) . '</p></div>';
+			}
+			if ( ! empty( $_GET['gsc_disconnected'] ) ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Google Search Console disconnected.', '4wp-seo-helper' ) . '</p></div>';
 			}
 			if ( isset( $_GET['gsc_saved'] ) ) {
 				$gsc_saved = sanitize_key( wp_unslash( $_GET['gsc_saved'] ) );

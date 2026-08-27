@@ -21,11 +21,6 @@
 	width: 22%;
 }
 
-.forwp-seo-inventory .column-post_type {
-	width: 96px;
-	white-space: nowrap;
-}
-
 .forwp-seo-inventory .column-lang {
 	width: 64px;
 	white-space: nowrap;
@@ -89,8 +84,42 @@
 }
 
 .forwp-seo-inventory .column-post_type {
-	text-align: center;
-	width: 40px;
+	min-width: 88px;
+	text-align: left;
+	white-space: nowrap;
+	width: 10%;
+}
+
+.forwp-seo-post-type-badge {
+	align-items: center;
+	color: #1d2327;
+	display: inline-flex;
+	font-size: 12px;
+	gap: 4px;
+	line-height: 1.3;
+	max-width: 120px;
+}
+
+.forwp-seo-post-type-badge__label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.forwp-seo-post-type-badge__icon {
+	color: #646970;
+	flex: none;
+	font-size: 16px;
+	height: 16px;
+	line-height: 16px;
+	width: 16px;
+}
+
+.forwp-seo-post-type-badge__icon img {
+	display: block;
+	height: 16px;
+	object-fit: contain;
+	width: 16px;
 }
 
 .forwp-seo-post-type-icon {

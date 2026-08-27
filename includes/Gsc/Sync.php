@@ -104,7 +104,9 @@ final class Sync {
 		if ( ! $admin->is_connected() || ! $admin->has_property() ) {
 			return [
 				'ok'      => false,
-				'message' => __( 'Not connected to Google Search Console.', '4wp-seo-helper' ),
+				'message' => $admin->is_connected()
+					? $admin->get_property_access_message()
+					: __( 'Not connected to Google Search Console.', '4wp-seo-helper' ),
 			];
 		}
 
@@ -194,6 +196,14 @@ final class Sync {
 			return [
 				'ok'      => false,
 				'message' => __( 'Not connected to Google Search Console.', '4wp-seo-helper' ),
+				'rows'    => 0,
+			];
+		}
+
+		if ( ! $admin->has_property() || $property !== Admin::get_site_property() ) {
+			return [
+				'ok'      => false,
+				'message' => $admin->get_property_access_message(),
 				'rows'    => 0,
 			];
 		}

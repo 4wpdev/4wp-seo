@@ -1,18 +1,20 @@
 === 4WP SEO Helper ===
 Contributors: 4wpdev, anatolikkk
-Tags: seo, inventory, yoast, meta description, audit
+Tags: seo, inventory, yoast, search console, google
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.9.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Audit SEO titles and meta site-wide, set P1-P3 priorities, export CSV, and sync via REST. Works with Yoast SEO and All in One SEO.
+Site-wide SEO inventory with P1–P3 priorities, REST sync, and Google Search Console — OAuth, analytics, URL inspection, and indexing tools. Works with Yoast SEO and All in One SEO.
 
 == Description ==
 
 **4WP SEO Helper** gives you a **site-wide SEO Inventory** for WordPress: see missing titles and meta descriptions, score completeness, and mark business priority with drag-and-drop **P1 / P2 / P3** lanes.
+
+Version **2.0** adds a full **Google Search Console** workspace inside wp-admin: connect your Google account, sync Search Analytics locally, inspect URLs, and see indexing status next to inventory rows.
 
 Built for teams that use **Yoast SEO** or **All in One SEO** and need one place to audit SEO fields across posts, pages, and public custom post types.
 
@@ -20,13 +22,17 @@ A plugin by [4wp.dev](https://4wp.dev/).
 
 = Perfect for =
 
-* **SEO audits** — filter by missing title, meta description, or focus keyword
+* **SEO audits** — filter by missing title, meta description, or focus keyphrases
 * **Content ops** — drag rows into P1–P3 lanes (business priority, not SEO score)
 * **Bulk workflows** — quick edit SEO fields from the inventory table
+* **Search Console ops** — overview, insights, performance breakdowns, URL inspection, and background data sync
+* **Indexing workflows** — refresh index status and request indexing from the inventory table or admin bar
 * **External sync** — REST API for Google Sheets or custom dashboards
 * **Multilingual sites** — Polylang, WPML, or single-language
 
 = How it works =
+
+**SEO Inventory**
 
 1. Activate the plugin (Yoast or All in One SEO recommended for read/write).
 2. Open **4WP SEO → SEO Inventory**.
@@ -36,9 +42,37 @@ A plugin by [4wp.dev](https://4wp.dev/).
 
 Priority reflects **business importance** (e.g. main service pages), not SEO score—a page can stay in P1 at 100% completeness.
 
+**Google Search Console**
+
+1. Enable **Google Search Console** under **4WP SEO → Settings**.
+2. Open **Settings → Search Console** and add OAuth **Client ID** and **Client Secret** from [Google Cloud Console](https://console.cloud.google.com/).
+3. Enable the **Google Search Console API** for the same Cloud project (OAuth alone is not enough).
+4. Register the redirect URI shown on the settings screen in your OAuth client.
+5. Click **Connect to Google** and sign in with an account that has access to this site in Search Console.
+6. The plugin auto-matches the property for your WordPress site domain, or use **Local / staging mode** to pick a property manually.
+7. Open **4WP SEO → GSC** for overview, insights, performance, URL inspection, and data sync.
+8. Run **Sync now** to pull Search Analytics into WordPress (optional daily WP-Cron schedule).
+
+If the connected Google account does **not** have access to this site's Search Console property, sync and GSC tools stay blocked until access is granted. The settings screen links to Search Console user management for the current site.
+
+= Google Search Console features =
+
+* **OAuth connection** — per-site Client ID/Secret, connect/disconnect Google account (tokens only; credentials stay saved)
+* **Property picker** — auto-match by domain (`https://example.com/` or `sc-domain:example.com`) or manual selection for staging
+* **Property access guard** — blocks sync and GSC menu until the connected account can access this site's property
+* **Overview & insights** — clicks, impressions, CTR, position, branded vs non-branded query breakdown (configurable brand terms)
+* **Performance** — Search Analytics by query, page, country, device, and search appearance with selectable date ranges
+* **URL Inspection** — live index status for a single URL on the selected property
+* **Data sync** — background manual sync and optional daily WP-Cron; stores metrics locally for inventory columns and reporting
+* **SEO Inventory integration** — GSC clicks/impressions/top queries per row; index status, last crawl, refresh/request indexing actions
+* **Admin bar** — quick Search Console inspect link on the front end when connected
+* **Local development** — loopback OAuth redirect helper for `.local` / localhost sites
+
 = Modules =
 
-**SEO Inventory**, **Inventory REST API**, and **Google Search Console** (OAuth, property picker, URL inspection, search analytics) are available in wp-admin. TechArticle schema, LLMS.txt, and cross posting appear as **Coming soon** until a future release.
+**Available in wp-admin:** SEO Inventory, Inventory REST API, Google Search Console.
+
+**Coming soon:** TechArticle schema, LLMS.txt, and cross posting (visible as badges in Settings until a future release).
 
 == Installation ==
 
@@ -47,7 +81,16 @@ Priority reflects **business importance** (e.g. main service pages), not SEO sco
 3. Install and activate **Yoast SEO** or **All in One SEO** for full inventory read/write.
 4. Open **4WP SEO → SEO Inventory** to start auditing.
 
-On activation, the inventory API token is created and the module is enabled by default.
+On activation, the inventory API token is created and the inventory module is enabled by default.
+
+**Optional — Google Search Console**
+
+1. Create a Google Cloud project and OAuth 2.0 **Web application** credentials.
+2. Enable **Google Search Console API** in APIs & Services → Library.
+3. Add the redirect URI from **4WP SEO → Settings → Search Console** to Authorized redirect URIs.
+4. Complete OAuth consent / branding in Google Cloud (Testing mode is fine for private sites; add test users).
+5. Verify the site exists in [Google Search Console](https://search.google.com/search-console) for the Google account you connect.
+6. Connect in WordPress and run an initial sync under **GSC → Data sync**.
 
 == Frequently Asked Questions ==
 
@@ -75,15 +118,46 @@ Yes. Language filters and per-language rows are supported when a multilingual pl
 
 = Which post types are included? =
 
-Public post types with `show_ui` are discovered automatically. Exclude types with the `forwp_seo_inventory_exclude_post_types` filter.
+Public post types with admin UI are discovered automatically. Core **post** and **page** are always included. Internal types without public front-end URLs (Elementor library, FSE templates, attachments, etc.) are excluded by default. Customize with the `forwp_seo_inventory_exclude_post_types` or `forwp_seo_inventory_post_type_is_viewable` filters.
+
+= How do I connect Google Search Console? =
+
+1. Enable the module under **4WP SEO → Settings**.
+2. Open **Settings → Search Console**.
+3. Paste OAuth Client ID and Secret from Google Cloud.
+4. Enable **Google Search Console API** in the same Cloud project.
+5. Copy the redirect URI into your OAuth client.
+6. Click **Connect to Google**.
+
+= Why does OAuth succeed but no property appears? =
+
+Common causes:
+
+* **Search Console API not enabled** in Google Cloud (OAuth and API are separate steps).
+* The connected Google account has **no access** to this site in Search Console.
+* The site is **not added or verified** in Search Console yet.
+
+The settings screen shows the API error when Google returns one. Use **Disconnect**, fix Cloud Console / Search Console access, then connect again.
+
+= Why are GSC tools or sync blocked? =
+
+The plugin requires a matched Search Console property for **this WordPress site**. If your Google account cannot see that property, inventory GSC columns, the GSC menu, and sync stay disabled until access is granted. The settings screen provides a **Request access in Search Console** link for the current site (built from `home_url()`, not hardcoded).
+
+= Can I disconnect Google without losing OAuth credentials? =
+
+Yes. **Disconnect** removes tokens and the selected property only. Client ID and Secret remain saved so you can reconnect quickly.
+
+= What does Local / staging mode do? =
+
+Lets you pick any property from the connected Google account manually—useful when the WordPress site URL differs from the GSC property (local dev, staging, or multi-site workflows).
+
+= Does sync run in the background? =
+
+Yes. **Sync now** queues a WP-Cron job so you can leave the page. Optional **daily automatic sync** can be enabled under **GSC → Data sync**.
 
 = What modules are coming soon? =
 
 TechArticle schema and blocks, LLMS.txt, and cross posting are in the codebase but hidden behind **Coming soon** badges until a future release.
-
-= How do I connect Google Search Console? =
-
-Open **4WP SEO → Search Console**. Add OAuth Client ID and Secret from Google Cloud Console, use the redirect URI shown on that screen, then connect and select your property.
 
 = Does it depend on other 4WP plugins? =
 
@@ -103,7 +177,7 @@ Used so an administrator can connect their Google account to WordPress. When the
 
 **Google Search Console API** (`searchconsole.googleapis.com`)
 
-Used to list verified properties, inspect URLs, and fetch Search Analytics for the connected property. The plugin sends the selected property URL, requested page URLs, and date ranges when an administrator runs sync, URL inspection, or live analytics tools in wp-admin. Synced metrics are stored locally in WordPress for reporting screens.
+Used to list verified properties, inspect URLs, and fetch Search Analytics for the connected property. The plugin sends the selected property URL, requested page URLs, and date ranges when an administrator runs sync, URL inspection, or live analytics tools in wp-admin. Synced metrics are stored locally in WordPress for reporting screens and inventory columns.
 
 No Google API calls are made until an administrator configures OAuth credentials and connects an account. The plugin does not send site visitor or front-end user data to Google.
 
@@ -114,16 +188,21 @@ No Google API calls are made until an administrator configures OAuth credentials
 == Screenshots ==
 
 1. SEO Inventory table with completeness scores and P1–P3 priority lanes
-2. Missing-field filters and quick edit for SEO title and meta description
-3. Settings — inventory API toggle and configurable priority tier names
-4. Inventory API connection details and sync token
+2. Missing-field filters, post type labels, focus keyphrases, and quick edit panel
+3. Settings — module toggles, Search Console OAuth, and property selection
+4. Google Search Console — overview, insights, and performance tabs
+5. GSC data sync, inventory Search Console metrics, and indexing actions
 
 == Changelog ==
 
-= 1.9.0 =
-* Merge wp.org 1.0.2 / dev 1.2.0 GSC routing fixes with internal GSC tools, focus keyphrases, and inventory UX updates.
-* GSC: admin bar inspect, inventory indexing actions, property resolver improvements.
-* Inventory: focus keyphrase filter, quick edit panel, styles moved to enqueued CSS.
+= 2.0.0 =
+* **Major release:** full Google Search Console integration merged with SEO Inventory.
+* GSC: OAuth connect/disconnect, property auto-match, local/staging manual picker, and property access guard.
+* GSC: Overview, Insights, Performance, URL Inspection, and background data sync with optional daily WP-Cron.
+* GSC: Inventory columns for clicks/impressions/queries, index status, and request-indexing actions; admin bar inspect shortcut.
+* Inventory: focus keyphrases filter and quick edit; post type labels; smarter post type discovery (exclude internal CPTs only).
+* GSC: clearer API error messages; Search Console user-access link when the connected account lacks property access.
+* Security: GSC report range preference requires nonce + `manage_options`.
 
 = 1.0.2 =
 * Security: GSC date range preference saves only with nonce + manage_options (fixes CSRF on ReportPeriod range GET).
@@ -137,10 +216,13 @@ No Google API calls are made until an administrator configures OAuth credentials
 * SEO adapters for **Yoast SEO** and **All in One SEO**.
 * Multilingual support: Polylang, WPML, single-language.
 * **REST API** (`forwp-seo-helper/v1/seo-inventory`) for external sync.
-* **Google Search Console** — OAuth, property picker, URL inspection, 28-day search metrics.
+* Basic **Google Search Console** OAuth and property picker foundation.
 * Future modules (TechArticle, LLMS.txt, cross posting) visible as Coming soon in admin.
 
 == Upgrade Notice ==
+
+= 2.0.0 =
+Major update: Google Search Console workspace, inventory GSC columns, property access guard, and indexing tools. Enable Search Console API in Google Cloud and verify site access after upgrading.
 
 = 1.0.2 =
 Security fix for GSC report range preference (nonce required before saving site option).

@@ -270,17 +270,36 @@ final class Client {
 			];
 		}
 
+		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $body ) ) {
 			return [
-				'error' => 'Invalid API response.',
+				'error' => 401 === $code || 403 === $code
+					? __( 'Google rejected the request. Try disconnecting and reconnecting, and confirm Search Console API is enabled in Google Cloud.', '4wp-seo-helper' )
+					: __( 'Invalid API response.', '4wp-seo-helper' ),
 			];
 		}
 
 		if ( isset( $body['error'] ) ) {
-			$message = is_array( $body['error'] ) ? ( $body['error']['message'] ?? 'API error' ) : $body['error'];
+			$message = is_array( $body['error'] ) ? (string) ( $body['error']['message'] ?? 'API error' ) : (string) $body['error'];
+			if ( 403 === $code && ( str_contains( strtolower( $message ), 'not enabled' ) || str_contains( strtolower( $message ), 'accessnotconfigured' ) ) ) {
+				$message = __( 'Search Console API is not enabled for this Google Cloud project. Open APIs & Services → Library, enable “Google Search Console API”, then disconnect and reconnect.', '4wp-seo-helper' );
+			} elseif ( 401 === $code ) {
+				$message = __( 'Google access token expired or was revoked. Disconnect and connect again.', '4wp-seo-helper' );
+			}
+
 			return [
 				'error' => $message,
+			];
+		}
+
+		if ( $code >= 400 ) {
+			return [
+				'error' => sprintf(
+					/* translators: %d: HTTP status code from Google API. */
+					__( 'Google API request failed (HTTP %d).', '4wp-seo-helper' ),
+					$code
+				),
 			];
 		}
 

@@ -328,6 +328,16 @@
 	margin: 12px 0 0;
 }
 
+.forwp-seo-gsc-access-callout {
+	border-left: 4px solid #dba617;
+	margin-bottom: 16px;
+}
+
+.forwp-seo-inline-actions .forwp-seo-inline-form {
+	display: inline-flex;
+	margin: 0;
+}
+
 .forwp-seo-code {
 	background: #f6f7f7;
 	border: 1px solid #dcdcde;

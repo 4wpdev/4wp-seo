@@ -674,18 +674,25 @@ final class InventoryListTable extends \WP_List_Table {
 		$label  = $object ? (string) $object->labels->singular_name : $post_type;
 		$icon   = $this->resolve_post_type_icon( $object, $post_type );
 
+		$icon_html = '';
 		if ( str_starts_with( $icon, 'dashicons-' ) ) {
-			return sprintf(
-				'<span class="forwp-seo-post-type-icon %1$s" title="%2$s" aria-label="%2$s"><span class="screen-reader-text">%2$s</span></span>',
-				esc_attr( $icon ),
-				esc_attr( $label )
+			$icon_html = sprintf(
+				'<span class="forwp-seo-post-type-badge__icon dashicons %1$s" aria-hidden="true"></span>',
+				esc_attr( $icon )
+			);
+		} elseif ( '' !== $icon && filter_var( $icon, FILTER_VALIDATE_URL ) ) {
+			$icon_html = sprintf(
+				'<span class="forwp-seo-post-type-badge__icon" aria-hidden="true"><img src="%1$s" alt="" width="16" height="16" /></span>',
+				esc_url( $icon )
 			);
 		}
 
 		return sprintf(
-			'<span class="forwp-seo-post-type-icon" title="%1$s"><img src="%2$s" alt="" width="18" height="18" /></span>',
+			'<span class="forwp-seo-post-type-badge" title="%1$s (%2$s)">%3$s<span class="forwp-seo-post-type-badge__label">%4$s</span></span>',
 			esc_attr( $label ),
-			esc_url( $icon )
+			esc_attr( $post_type ),
+			$icon_html,
+			esc_html( $label )
 		);
 	}
 
@@ -706,6 +713,7 @@ final class InventoryListTable extends \WP_List_Table {
 		return match ( $post_type ) {
 			'page' => 'dashicons-admin-page',
 			'post' => 'dashicons-admin-post',
+			'product' => 'dashicons-cart',
 			default => 'dashicons-admin-post',
 		};
 	}
