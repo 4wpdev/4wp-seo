@@ -79,19 +79,62 @@ final class PropertyResolver {
 	}
 
 	/**
-	 * Google Search Console URL Inspection UI for this property + page.
+	 * Whether a link came from the URL Inspection API (opaque id= token).
 	 *
-	 * Do not use add_query_arg() here: it does not encode values, so nested
-	 * https:// URLs + `&id=` get mangled by esc_url() / HTML / the browser.
+	 * Manual deep links with id=https://… as the page URL no longer open the
+	 * inspection panel reliably in Search Console.
 	 */
-	public static function search_console_inspect_url( string $property, string $url ): string {
+	public static function is_valid_inspection_result_link( string $link ): bool {
+		$link = trim( $link );
+		if ( '' === $link || ! str_contains( $link, 'search.google.com/search-console/inspect' ) ) {
+			return false;
+		}
+
+		$query = wp_parse_url( $link, PHP_URL_QUERY );
+		if ( ! is_string( $query ) || '' === $query ) {
+			return false;
+		}
+
+		parse_str( $query, $params );
+		$id = isset( $params['id'] ) ? (string) $params['id'] : '';
+		if ( '' === $id ) {
+			return false;
+		}
+
+		return ! str_starts_with( $id, 'http://' ) && ! str_starts_with( $id, 'https://' );
+	}
+
+	/**
+	 * Search Console property home (fallback when no inspectionResultLink yet).
+	 */
+	public static function search_console_property_url( string $property ): string {
 		$property = trim( $property );
-		$url      = trim( $url );
-		if ( '' === $property || '' === $url ) {
+		if ( '' === $property ) {
 			return '';
 		}
 
-		return 'https://search.google.com/search-console/inspect?resource_id=' . rawurlencode( $property ) . '&id=' . rawurlencode( $url );
+		return 'https://search.google.com/search-console?resource_id=' . rawurlencode( self::normalize_site_url_for_api( $property ) );
+	}
+
+	/**
+	 * @deprecated 1.2.1 Use inspectionResultLink from the API or search_console_property_url().
+	 */
+	public static function search_console_inspect_url( string $property, string $url ): string {
+		unset( $url );
+
+		return self::search_console_property_url( $property );
+	}
+
+	/**
+	 * URL-prefix properties must use a trailing slash in Search Console API calls.
+	 */
+	public static function normalize_site_url_for_api( string $site ): string {
+		$site = trim( $site );
+		if ( '' === $site || str_starts_with( $site, 'sc-domain:' ) ) {
+			return $site;
+		}
+
+		return trailingslashit( $site );
 	}
 
 	public static function url_belongs_to_property( string $url, string $site ): bool {

@@ -6,6 +6,7 @@
 namespace Forwp\SeoHelper\Inventory;
 
 use Forwp\SeoHelper\Inventory\Rest\Auth;
+use Forwp\SeoHelper\SeoMeta\FocusKeyphrases;
 use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -69,12 +70,23 @@ final class BulkUpdater {
 			}
 
 			$normalized = $this->normalize_fields( $fields );
-			if ( empty( $normalized ) ) {
+			$has_focus  = array_key_exists( 'focus_keyphrases', $fields ) || array_key_exists( 'focus_keyword', $fields );
+
+			if ( empty( $normalized ) && ! $has_focus ) {
 				$errors[] = [
 					'post_id' => $post_id,
 					'message' => __( 'No supported fields provided.', '4wp-seo-helper' ),
 				];
 				continue;
+			}
+
+			if ( $has_focus ) {
+				$raw_phrases = array_key_exists( 'focus_keyphrases', $fields )
+					? $fields['focus_keyphrases']
+					: $fields['focus_keyword'];
+				$phrases     = FocusKeyphrases::normalize_input( $raw_phrases );
+				FocusKeyphrases::save( $post_id, $phrases );
+				$normalized['focus_keyword'] = FocusKeyphrases::primary( $phrases );
 			}
 
 			if ( ! $adapter->write( $post_id, $normalized ) ) {
@@ -116,6 +128,7 @@ final class BulkUpdater {
 				'title',
 				'description',
 				'focus_keyword',
+				'focus_keyphrases',
 				'canonical',
 				'noindex',
 				'og_title',
@@ -124,6 +137,10 @@ final class BulkUpdater {
 			];
 
 			if ( ! in_array( $key, $allowed, true ) ) {
+				continue;
+			}
+
+			if ( 'focus_keyphrases' === $key ) {
 				continue;
 			}
 

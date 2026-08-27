@@ -5,7 +5,9 @@
 
 namespace Forwp\SeoHelper\Inventory;
 
+use Forwp\SeoHelper\Gsc\Indexing;
 use Forwp\SeoHelper\Multilingual\Registry as MultilingualRegistry;
+use Forwp\SeoHelper\SeoMeta\FocusKeyphrases;
 use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
 use WP_Post;
 
@@ -238,6 +240,9 @@ final class Repository {
 		$adapter  = SeoMetaRegistry::get_active();
 		$provider = MultilingualRegistry::get_active();
 		$meta     = $adapter->read( $post->ID );
+		$phrases  = FocusKeyphrases::read_for_post( $post->ID, (string) ( $meta['focus_keyword'] ?? '' ) );
+		$meta['focus_keyphrases'] = $phrases;
+		$meta['focus_keyword']    = FocusKeyphrases::primary( $phrases );
 
 		if ( '' === $meta['og_image'] && has_post_thumbnail( $post ) ) {
 			$thumb = wp_get_attachment_image_url( get_post_thumbnail_id( $post ), 'full' );
@@ -258,7 +263,7 @@ final class Repository {
 
 		$slot = ( new PriorityQueue() )->get_post_slot( $post->ID );
 
-		return [
+		$record = [
 			'post_id'            => $post->ID,
 			'lang'               => $provider->get_post_language( $post->ID ),
 			'post_type'          => $post->post_type,
@@ -269,6 +274,8 @@ final class Repository {
 			'seo_title'          => $meta['title'],
 			'meta_description'   => $meta['description'],
 			'focus_keyword'      => $meta['focus_keyword'],
+			'focus_keyphrases'   => $phrases,
+			'focus_keyphrases_text' => FocusKeyphrases::format( $phrases ),
 			'canonical'          => $meta['canonical'],
 			'noindex'            => (bool) $meta['noindex'],
 			'og_title'           => $meta['og_title'],
@@ -286,6 +293,8 @@ final class Repository {
 			'priority'           => $slot['priority'] ?? null,
 			'queue_position'     => isset( $slot['queue_position'] ) ? (int) $slot['queue_position'] : null,
 		];
+
+		return array_merge( $record, Indexing::inventory_fields( $post->ID ) );
 	}
 
 	/**

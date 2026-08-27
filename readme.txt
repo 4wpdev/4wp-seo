@@ -4,7 +4,7 @@ Tags: seo, inventory, yoast, meta description, audit
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.2
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -119,6 +119,11 @@ No Google API calls are made until an administrator configures OAuth credentials
 4. Inventory API connection details and sync token
 
 == Changelog ==
+
+= 1.9.0 =
+* Merge wp.org 1.0.2 / dev 1.2.0 GSC routing fixes with internal GSC tools, focus keyphrases, and inventory UX updates.
+* GSC: admin bar inspect, inventory indexing actions, property resolver improvements.
+* Inventory: focus keyphrase filter, quick edit panel, styles moved to enqueued CSS.
 
 = 1.0.2 =
 * Security: GSC date range preference saves only with nonce + manage_options (fixes CSRF on ReportPeriod range GET).

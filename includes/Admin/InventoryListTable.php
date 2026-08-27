@@ -7,12 +7,13 @@ namespace Forwp\SeoHelper\Admin;
 
 use Forwp\SeoHelper\Core\Release;
 use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
-use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
 use Forwp\SeoHelper\Gsc\Module as GscModule;
 use Forwp\SeoHelper\Gsc\PageMetrics;
+use Forwp\SeoHelper\Gsc\PropertyResolver;
 use Forwp\SeoHelper\Gsc\ReportPeriod;
 use Forwp\SeoHelper\Inventory\PriorityLabels;
 use Forwp\SeoHelper\Inventory\Repository;
+use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -37,6 +38,8 @@ final class InventoryListTable extends \WP_List_Table {
 	private $priority_filter = null;
 
 	private bool $show_gsc_metrics = false;
+
+	private bool $show_gsc_indexing = false;
 
 	public function __construct( Repository $repository ) {
 		$this->repository = $repository;
@@ -76,6 +79,10 @@ final class InventoryListTable extends \WP_List_Table {
 		$this->show_gsc_metrics = $show;
 	}
 
+	public function set_show_gsc_indexing( bool $show ): void {
+		$this->show_gsc_indexing = $show;
+	}
+
 	protected function column_cb( $item ): string {
 		return sprintf(
 			'<input type="checkbox" name="post_ids[]" value="%s" />',
@@ -111,11 +118,25 @@ final class InventoryListTable extends \WP_List_Table {
 			'post_type'        => __( 'Type', '4wp-seo-helper' ),
 			'seo_title'        => __( 'SEO title', '4wp-seo-helper' ),
 			'meta_description' => __( 'Meta description', '4wp-seo-helper' ),
-			'focus_keyword'    => __( 'Focus keyword', '4wp-seo-helper' ),
+			'focus_keyword'    => __( 'Focus keyphrases', '4wp-seo-helper' ),
 			'og_image'         => __( 'OG image', '4wp-seo-helper' ),
 			'completeness'     => $this->get_score_column_label(),
 			'missing'          => __( 'Missing', '4wp-seo-helper' ),
 		];
+
+		if ( $this->show_gsc_indexing ) {
+			$index_cols = [
+				'gsc_index_status'    => __( 'Index status', '4wp-seo-helper' ),
+				'gsc_index_requested' => __( 'Index requested', '4wp-seo-helper' ),
+				'gsc_last_crawl'      => __( 'Last crawl', '4wp-seo-helper' ),
+				'gsc_actions'         => __( 'Index actions', '4wp-seo-helper' ),
+			];
+			$columns = array_merge(
+				array_slice( $columns, 0, -2, true ),
+				$index_cols,
+				array_slice( $columns, -2, null, true )
+			);
+		}
 
 		if ( $this->show_gsc_metrics ) {
 			$range_label = ReportPeriod::label();
@@ -511,6 +532,7 @@ final class InventoryListTable extends \WP_List_Table {
 				'seo_title'        => (string) ( $item['seo_title'] ?? '' ),
 				'meta_description' => (string) ( $item['meta_description'] ?? '' ),
 				'focus_keyword'    => (string) ( $item['focus_keyword'] ?? '' ),
+				'focus_keyphrases_text' => (string) ( $item['focus_keyphrases_text'] ?? '' ),
 				'og_image'         => (string) ( $item['og_image'] ?? '' ),
 			]
 		);
@@ -571,6 +593,18 @@ final class InventoryListTable extends \WP_List_Table {
 			case 'gsc':
 				return $this->render_gsc_cell( $item );
 
+			case 'gsc_index_status':
+				return $this->render_gsc_index_status_cell( $item );
+
+			case 'gsc_index_requested':
+				return $this->render_gsc_index_requested_cell( $item );
+
+			case 'gsc_last_crawl':
+				return $this->render_gsc_last_crawl_cell( $item );
+
+			case 'gsc_actions':
+				return $this->render_gsc_actions_cell( $item );
+
 			case 'missing':
 				$missing = is_array( $item['missing'] ?? null ) ? $item['missing'] : [];
 				return esc_html( implode( ', ', $missing ) );
@@ -581,13 +615,14 @@ final class InventoryListTable extends \WP_List_Table {
 				return '';
 
 			case 'seo_title':
+				return $this->render_text_excerpt_cell( (string) ( $item['seo_title'] ?? '' ) );
+
 			case 'meta_description':
+				return $this->render_text_excerpt_cell( (string) ( $item['meta_description'] ?? '' ) );
+
 			case 'focus_keyword':
-				$value = (string) ( $item[ $column_name ] ?? '' );
-				if ( '' === $value ) {
-					return '<span aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'Empty', '4wp-seo-helper' ) . '</span>';
-				}
-				return esc_html( wp_html_excerpt( $value, 80, '…' ) );
+				$value = (string) ( $item['focus_keyphrases_text'] ?? $item['focus_keyword'] ?? '' );
+				return $this->render_text_excerpt_cell( $value, true );
 
 			default:
 				return esc_html( (string) ( $item[ $column_name ] ?? '' ) );
@@ -732,5 +767,112 @@ final class InventoryListTable extends \WP_List_Table {
 		$html .= '</div>';
 
 		return $html;
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 */
+	private function render_gsc_index_status_cell( array $item ): string {
+		$coverage = (string) ( $item['gsc_coverage'] ?? '' );
+		$verdict  = (string) ( $item['gsc_verdict'] ?? '' );
+		$error    = (string) ( $item['gsc_inspect_error'] ?? '' );
+		$link     = (string) ( $item['gsc_inspect_link'] ?? '' );
+
+		if ( '' !== $error && '' === $coverage && '' === $verdict ) {
+			return '<span class="forwp-seo-index-pill forwp-seo-index-pill--bad" title="' . esc_attr( $error ) . '">' . esc_html__( 'Inspect error', '4wp-seo-helper' ) . '</span>';
+		}
+
+		$label = '' !== $coverage ? $coverage : ( '' !== $verdict ? $verdict : '' );
+		if ( '' === $label ) {
+			return '<span aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'Not inspected yet', '4wp-seo-helper' ) . '</span>';
+		}
+
+		$tone = $this->gsc_coverage_tone( $coverage, $verdict );
+		$html = '<span class="forwp-seo-index-pill forwp-seo-index-pill--' . esc_attr( $tone ) . '">' . esc_html( $label ) . '</span>';
+
+		if ( '' !== $link && PropertyResolver::is_valid_inspection_result_link( $link ) ) {
+			$html = '<a href="' . esc_url( $link ) . '" target="_blank" rel="noopener noreferrer" class="forwp-seo-index-pill-link">' . $html . '</a>';
+		}
+
+		return $html;
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 */
+	private function render_gsc_index_requested_cell( array $item ): string {
+		return esc_html( $this->format_gsc_unix_time( (int) ( $item['gsc_index_requested_at'] ?? 0 ) ) );
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 */
+	private function render_gsc_actions_cell( array $item ): string {
+		$post_id   = (int) ( $item['post_id'] ?? 0 );
+		$published = 'publish' === (string) ( $item['status'] ?? '' );
+		$disabled  = $published ? '' : ' disabled aria-disabled="true"';
+
+		return sprintf(
+			'<div class="forwp-seo-gsc-actions">' .
+			'<button type="button" class="button button-small forwp-seo-gsc-refresh" data-post-id="%1$d"%2$s title="%5$s">%3$s</button>' .
+			'<button type="button" class="button button-small forwp-seo-gsc-request-index" data-post-id="%1$d"%2$s title="%6$s">%4$s</button>' .
+			'</div>',
+			$post_id,
+			$disabled,
+			esc_html__( 'Refresh status', '4wp-seo-helper' ),
+			esc_html__( 'Request indexing', '4wp-seo-helper' ),
+			esc_attr__( 'Fetch latest index status from Google Search Console', '4wp-seo-helper' ),
+			esc_attr__( 'Open Search Console to request indexing for this URL', '4wp-seo-helper' )
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 */
+	private function render_gsc_last_crawl_cell( array $item ): string {
+		return esc_html( $this->format_gsc_iso_time( (string) ( $item['gsc_last_crawl'] ?? '' ) ) );
+	}
+
+	private function render_text_excerpt_cell( string $value, bool $multiline = false ): string {
+		if ( '' === $value ) {
+			return '<span aria-hidden="true">—</span><span class="screen-reader-text">' . esc_html__( 'Empty', '4wp-seo-helper' ) . '</span>';
+		}
+
+		$display = $multiline ? str_replace( [ "\r\n", "\r", "\n" ], ' · ', $value ) : $value;
+
+		return esc_html( wp_html_excerpt( $display, 80, '…' ) );
+	}
+
+	private function format_gsc_unix_time( int $timestamp ): string {
+		if ( $timestamp <= 0 ) {
+			return '—';
+		}
+
+		return wp_date( 'd.m.Y H:i', $timestamp );
+	}
+
+	private function format_gsc_iso_time( string $iso ): string {
+		if ( '' === trim( $iso ) ) {
+			return '—';
+		}
+
+		$timestamp = strtotime( $iso );
+		if ( false === $timestamp ) {
+			return $iso;
+		}
+
+		return wp_date( 'd.m.Y H:i', $timestamp );
+	}
+
+	private function gsc_coverage_tone( string $coverage, string $verdict ): string {
+		$text = $coverage . ' ' . $verdict;
+		if ( preg_match( '/indexed/i', $text ) && ! preg_match( '/not indexed|excluded/i', $text ) ) {
+			return 'good';
+		}
+		if ( preg_match( '/not indexed|excluded|error|fail/i', $text ) ) {
+			return 'bad';
+		}
+
+		return 'ok';
 	}
 }

@@ -91,7 +91,10 @@ final class Page {
 				<span class="forwp-seo-admin-heading__icon" aria-hidden="true">
 					<?php echo wp_kses( $heading_svg, self::svg_allowed_html() ); ?>
 				</span>
-				<span class="forwp-seo-admin-heading__text"><?php esc_html_e( '4WP SEO Helper', '4wp-seo-helper' ); ?></span>
+				<span class="forwp-seo-admin-heading__text">
+					<?php esc_html_e( '4WP SEO Helper', '4wp-seo-helper' ); ?>
+					<span class="forwp-seo-admin-heading__version"><?php echo esc_html( self::get_version_label() ); ?></span>
+				</span>
 			</h1>
 			<p class="forwp-seo-admin-lead">
 				<?php esc_html_e( 'SEO Inventory for WordPress — audit titles, meta descriptions, and SEO completeness across your site. More modules are on the roadmap.', '4wp-seo-helper' ); ?>
@@ -584,6 +587,15 @@ final class Page {
 			}
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+	}
+
+	/**
+	 * Plugin version for admin UI (uppercase, from plugin header).
+	 */
+	public static function get_version_label(): string {
+		$version = defined( 'FORWP_SEO_HELPER_VERSION' ) ? FORWP_SEO_HELPER_VERSION : '0.0.0';
+
+		return strtoupper( (string) $version );
 	}
 
 	/**

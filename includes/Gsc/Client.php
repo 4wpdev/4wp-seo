@@ -114,7 +114,7 @@ final class Client {
 	public function inspect_url( string $access_token, string $site_url, string $url ): array {
 		$body = [
 			'inspectionUrl' => $url,
-			'siteUrl'       => $site_url,
+			'siteUrl'       => PropertyResolver::normalize_site_url_for_api( $site_url ),
 		];
 
 		$response = wp_remote_post(

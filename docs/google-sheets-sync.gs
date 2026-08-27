@@ -60,7 +60,7 @@ function pullInventoryToSheet() {
     'url',
     'seo_title',
     'meta_description',
-    'focus_keyword',
+    'focus_keyphrases_text',
     'priority',
     'queue_position',
     'completeness',
@@ -78,7 +78,7 @@ function pullInventoryToSheet() {
       item.url,
       item.seo_title,
       item.meta_description,
-      item.focus_keyword,
+      item.focus_keyphrases_text || item.focus_keyword,
       item.priority || '',
       item.queue_position === 0 || item.queue_position ? item.queue_position : '',
       item.completeness,
@@ -111,7 +111,7 @@ function pushBulkFromSheet() {
       fields: {
         seo_title: String(row[index('seo_title')] || ''),
         meta_description: String(row[index('meta_description')] || ''),
-        focus_keyword: String(row[index('focus_keyword')] || ''),
+        focus_keyphrases: String(row[index('focus_keyphrases_text')] || row[index('focus_keyword')] || ''),
       },
     });
   });

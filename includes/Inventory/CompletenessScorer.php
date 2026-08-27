@@ -18,7 +18,7 @@ final class CompletenessScorer {
 		$checks = [
 			'title'         => ! empty( $meta['title'] ),
 			'description'   => ! empty( $meta['description'] ),
-			'focus_keyword' => ! empty( $meta['focus_keyword'] ),
+			'focus_keyword' => ! empty( $meta['focus_keyphrases'] ) || ! empty( $meta['focus_keyword'] ),
 			'og_image'      => ! empty( $meta['og_image'] ),
 		];
 

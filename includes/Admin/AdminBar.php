@@ -37,6 +37,44 @@ final class AdminBar {
 			[],
 			FORWP_SEO_HELPER_VERSION
 		);
+
+		$post_id = self::current_post_id();
+		if ( $post_id <= 0 || ! GscModule::get_instance()->is_enabled() || ! GscAdmin::get_instance()->is_connected() ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'forwp-seo-admin-bar-gsc',
+			FORWP_SEO_HELPER_URL . 'assets/js/admin-bar-gsc.js',
+			[],
+			FORWP_SEO_HELPER_VERSION,
+			true
+		);
+
+		$stored_link = '';
+		$raw         = get_post_meta( $post_id, Indexing::META_LAST_STATUS, true );
+		if ( is_string( $raw ) && '' !== $raw ) {
+			$decoded = json_decode( $raw, true );
+			if ( is_array( $decoded ) ) {
+				$stored_link = esc_url_raw( (string) ( $decoded['inspectLink'] ?? '' ) );
+			}
+		}
+
+		wp_localize_script(
+			'forwp-seo-admin-bar-gsc',
+			'forwpSeoAdminBarGsc',
+			[
+				'postId'     => $post_id,
+				'restRoot'   => rest_url( 'forwp-seo/v1/' ),
+				'nonce'      => wp_create_nonce( 'wp_rest' ),
+				'storedUrl'  => PropertyResolver::is_valid_inspection_result_link( $stored_link ) ? $stored_link : '',
+				'propertyUrl'=> PropertyResolver::search_console_property_url( GscAdmin::get_site_property() ),
+				'i18n'       => [
+					'opening' => __( 'Opening Search Console…', '4wp-seo-helper' ),
+					'error'   => __( 'Search Console inspect failed. Open your property in GSC and paste the URL manually.', '4wp-seo-helper' ),
+				],
+			]
+		);
 	}
 
 	public static function register( \WP_Admin_Bar $wp_admin_bar ): void {
@@ -136,12 +174,12 @@ final class AdminBar {
 					'id'     => self::NODE_ID . '-gsc',
 					'title'  => $gsc['title'],
 					'href'   => $gsc['href'],
-					'meta'   => str_starts_with( $gsc['href'], 'https://search.google.com/' )
-						? [
-							'target' => '_blank',
-							'rel'    => 'noopener noreferrer',
-						]
-						: [],
+					'meta'   => [
+						'class'  => 'forwp-seo-ab-gsc-link',
+						'target' => '_blank',
+						'rel'    => 'noopener noreferrer',
+						'title'  => __( 'Open URL Inspection in Google Search Console', '4wp-seo-helper' ),
+					],
 				]
 			);
 		}
@@ -196,10 +234,12 @@ final class AdminBar {
 
 		$raw = get_post_meta( $post_id, Indexing::META_LAST_STATUS, true );
 		$coverage = '';
+		$link     = '';
 		if ( is_string( $raw ) && '' !== $raw ) {
 			$decoded = json_decode( $raw, true );
 			if ( is_array( $decoded ) ) {
 				$coverage = sanitize_text_field( (string) ( $decoded['coverage'] ?? '' ) );
+				$link     = esc_url_raw( (string) ( $decoded['inspectLink'] ?? '' ) );
 			}
 		}
 
@@ -209,8 +249,10 @@ final class AdminBar {
 			$url = PropertyResolver::rewrite_url_for_property( $url, $site );
 		}
 
-		$href = PropertyResolver::search_console_inspect_url( $site, $url );
-		if ( '' === $href ) {
+		$href = PropertyResolver::is_valid_inspection_result_link( $link )
+			? $link
+			: '#forwp-seo-gsc-inspect';
+		if ( '#forwp-seo-gsc-inspect' === $href && '' === PropertyResolver::search_console_property_url( $site ) ) {
 			$href = admin_url( 'admin.php?page=' . Menu::SETTINGS_PAGE_SLUG . '&tab=gsc' );
 		}
 

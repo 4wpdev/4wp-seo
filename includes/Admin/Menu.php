@@ -276,6 +276,8 @@ final class Menu {
 	public function enqueue_inventory_assets(): void {
 		$table = new InventoryListTable( new Repository() );
 		$table->set_show_language( count( MultilingualRegistry::get_active()->get_languages() ) > 1 );
+		$table->set_show_gsc_metrics( InventoryPage::should_show_gsc_metrics() );
+		$table->set_show_gsc_indexing( InventoryPage::should_show_gsc_indexing() );
 		$columns = $table->get_columns();
 		$screen  = get_current_screen();
 		$hidden  = $screen instanceof \WP_Screen ? get_hidden_columns( $screen ) : [];
@@ -336,6 +338,33 @@ final class Menu {
 			wp_enqueue_media();
 		}
 
+		if ( InventoryPage::should_show_gsc_indexing() ) {
+			wp_enqueue_script(
+				'forwp-seo-inventory-gsc-actions',
+				FORWP_SEO_HELPER_URL . 'assets/js/inventory-gsc-actions.js',
+				[],
+				FORWP_SEO_HELPER_VERSION,
+				true
+			);
+
+			wp_localize_script(
+				'forwp-seo-inventory-gsc-actions',
+				'forwpSeoInventoryGsc',
+				[
+					'restRoot' => rest_url( 'forwp-seo/v1/' ),
+					'nonce'    => wp_create_nonce( 'wp_rest' ),
+					'i18n'     => [
+						'refresh'      => __( 'Refresh status', '4wp-seo-helper' ),
+						'requestIndex' => __( 'Request indexing', '4wp-seo-helper' ),
+						'refreshing'   => __( 'Refreshing…', '4wp-seo-helper' ),
+						'requesting'   => __( 'Opening GSC…', '4wp-seo-helper' ),
+						'inspectError' => __( 'Inspect error', '4wp-seo-helper' ),
+						'error'        => __( 'Search Console action failed.', '4wp-seo-helper' ),
+					],
+				]
+			);
+		}
+
 		wp_enqueue_script(
 			'forwp-seo-inventory-quick-edit',
 			FORWP_SEO_HELPER_URL . 'assets/js/inventory-quick-edit.js',
@@ -360,7 +389,8 @@ final class Menu {
 					'empty'        => __( 'Empty', '4wp-seo-helper' ),
 					'seoTitle'     => __( 'SEO title', '4wp-seo-helper' ),
 					'metaDesc'     => __( 'Meta description', '4wp-seo-helper' ),
-					'focusKw'      => __( 'Focus keyword', '4wp-seo-helper' ),
+					'focusKw'      => __( 'Focus keyphrases', '4wp-seo-helper' ),
+					'focusKwHint'  => __( 'One phrase per line. First line = primary (synced to Yoast).', '4wp-seo-helper' ),
 					'ogImage'      => __( 'OG image', '4wp-seo-helper' ),
 					'selectOgImage'=> __( 'Select image', '4wp-seo-helper' ),
 					'useImage'     => __( 'Use image', '4wp-seo-helper' ),

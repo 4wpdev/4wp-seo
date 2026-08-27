@@ -254,30 +254,12 @@
 			}
 		};
 
-		const gscInspectHref = ( property, pageUrl ) => {
-			if ( ! property || ! pageUrl ) {
-				return '';
-			}
-			return (
-				'https://search.google.com/search-console/inspect?resource_id=' +
-				encodeURIComponent( property ) +
-				'&id=' +
-				encodeURIComponent( pageUrl )
-			);
-		};
-
 		const requestGscIndex = async ( event ) => {
 			if ( event && event.preventDefault ) {
 				event.preventDefault();
 			}
 			if ( ! postId || ! apiFetch || ! gscStatus?.ready ) {
 				return;
-			}
-			const inspectUrl =
-				gscInspectHref( gscStatus.property, gscStatus.inspectionUrl ) ||
-				gscStatus.gscInspectUrl;
-			if ( inspectUrl ) {
-				window.open( inspectUrl, '_blank', 'noopener,noreferrer' );
 			}
 			setGscBusy( true );
 			try {
@@ -288,6 +270,10 @@
 					data: { post_id: postId },
 				} );
 				setGscStatus( response );
+				const inspectUrl = response?.gscInspectUrl || response?.inspect?.inspectLink || '';
+				if ( inspectUrl ) {
+					window.open( inspectUrl, '_blank', 'noopener,noreferrer' );
+				}
 			} catch ( err ) {
 				setGscStatus( {
 					ok: false,
@@ -609,7 +595,13 @@
 			if ( ! n ) {
 				return '';
 			}
-			return new Date( n * 1000 ).toLocaleString();
+			return new Date( n * 1000 ).toLocaleString( undefined, {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+			} );
 		};
 
 		const formatCrawl = ( iso ) => {
@@ -620,7 +612,13 @@
 			if ( Number.isNaN( date.getTime() ) ) {
 				return iso;
 			}
-			return date.toLocaleString();
+			return date.toLocaleString( undefined, {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+			} );
 		};
 
 		const scoreTone = ( value, noFocus ) => {
@@ -836,7 +834,6 @@
 					__( 'Opens Google Search Console on this article URL. Click Request indexing there — the API cannot queue that action.', '4wp-seo-helper' )
 				)
 			);
-			const inspectHref = gscInspectHref( gscStatus?.property, gscStatus?.inspectionUrl ) || gscStatus?.gscInspectUrl || '';
 			gscPanelBody.push(
 				el(
 					'div',
@@ -846,7 +843,7 @@
 						{
 							variant: 'primary',
 							onClick: requestGscIndex,
-							disabled: ! gscStatus?.ready || ! inspectHref || gscBusy || gscLoading || postStatus !== 'publish',
+							disabled: ! gscStatus?.ready || gscBusy || gscLoading || postStatus !== 'publish',
 							isBusy: gscBusy,
 						},
 						__( 'Request indexing', '4wp-seo-helper' )

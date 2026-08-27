@@ -108,6 +108,9 @@ final class Indexing {
 		$result            = $this->build_status( $post_id, false );
 		$result['ok']      = true;
 		$result['inspect'] = $inspect['inspect'] ?? $result['inspect'];
+		if ( ! empty( $inspect['inspect']['inspectLink'] ) ) {
+			$result['gscInspectUrl'] = (string) $inspect['inspect']['inspectLink'];
+		}
 		$result['message'] = __( 'Opened Search Console for this URL. Click Request indexing on that page.', '4wp-seo-helper' );
 
 		return $result;
@@ -166,7 +169,7 @@ final class Indexing {
 
 		$url = PropertyResolver::rewrite_url_for_property( (string) get_permalink( $post ), $site );
 		$base['inspectionUrl'] = $url;
-		$base['gscInspectUrl'] = PropertyResolver::search_console_inspect_url( $site, $url );
+		$base['gscInspectUrl'] = $this->resolve_gsc_inspect_url( $post_id, $site, $url );
 
 		if ( ! PropertyResolver::url_belongs_to_property( $url, $site ) ) {
 			$base['message'] = __( 'This URL is not part of the selected Search Console property.', '4wp-seo-helper' );
@@ -177,7 +180,9 @@ final class Indexing {
 
 		if ( $live_inspect ) {
 			$token = $admin->get_access_token_for_sync();
-			$base['inspect'] = $this->inspect_and_store( $post_id, $url, $token, $site )['inspect'];
+			$inspect_result      = $this->inspect_and_store( $post_id, $url, $token, $site );
+			$base['inspect']     = $inspect_result['inspect'];
+			$base['gscInspectUrl'] = $this->resolve_gsc_inspect_url( $post_id, $site, $url );
 		}
 
 		return $base;
@@ -193,6 +198,7 @@ final class Indexing {
 			'lastCrawl'        => '',
 			'userCanonical'    => '',
 			'googleCanonical'  => '',
+			'inspectLink'      => '',
 			'error'            => '',
 		];
 
@@ -215,10 +221,66 @@ final class Indexing {
 		$inspect['lastCrawl']       = sanitize_text_field( (string) ( $index['lastCrawlTime'] ?? '' ) );
 		$inspect['userCanonical']   = esc_url_raw( (string) ( $index['userCanonical'] ?? '' ) );
 		$inspect['googleCanonical'] = esc_url_raw( (string) ( $index['googleCanonical'] ?? '' ) );
+		$inspect['inspectLink']     = esc_url_raw( (string) ( $result['inspectionResult']['inspectionResultLink'] ?? '' ) );
 
 		update_post_meta( $post_id, self::META_LAST_STATUS, wp_json_encode( $inspect ) );
 
 		return [ 'inspect' => $inspect ];
+	}
+
+	private function resolve_gsc_inspect_url( int $post_id, string $site, string $url ): string {
+		unset( $url );
+
+		$stored = $this->read_stored_inspect( $post_id );
+		$link   = (string) ( $stored['inspectLink'] ?? '' );
+		if ( PropertyResolver::is_valid_inspection_result_link( $link ) ) {
+			return $link;
+		}
+
+		return PropertyResolver::search_console_property_url( $site );
+	}
+
+	/**
+	 * Stored inspect + request data for SEO Inventory (no live API call).
+	 *
+	 * @return array{
+	 *     gsc_coverage: string,
+	 *     gsc_verdict: string,
+	 *     gsc_last_crawl: string,
+	 *     gsc_index_requested_at: int,
+	 *     gsc_inspect_link: string,
+	 *     gsc_inspect_error: string
+	 * }
+	 */
+	public static function inventory_fields( int $post_id ): array {
+		$raw     = get_post_meta( $post_id, self::META_LAST_STATUS, true );
+		$inspect = [
+			'coverage'    => '',
+			'verdict'     => '',
+			'lastCrawl'   => '',
+			'inspectLink' => '',
+			'error'       => '',
+		];
+
+		if ( is_string( $raw ) && '' !== $raw ) {
+			$decoded = json_decode( $raw, true );
+			if ( is_array( $decoded ) ) {
+				$inspect['coverage']    = sanitize_text_field( (string) ( $decoded['coverage'] ?? '' ) );
+				$inspect['verdict']     = sanitize_text_field( (string) ( $decoded['verdict'] ?? '' ) );
+				$inspect['lastCrawl']   = sanitize_text_field( (string) ( $decoded['lastCrawl'] ?? '' ) );
+				$inspect['inspectLink'] = esc_url_raw( (string) ( $decoded['inspectLink'] ?? '' ) );
+				$inspect['error']       = sanitize_text_field( (string) ( $decoded['error'] ?? '' ) );
+			}
+		}
+
+		return [
+			'gsc_coverage'             => $inspect['coverage'],
+			'gsc_verdict'              => $inspect['verdict'],
+			'gsc_last_crawl'           => $inspect['lastCrawl'],
+			'gsc_index_requested_at'   => (int) get_post_meta( $post_id, self::META_REQUESTED_AT, true ),
+			'gsc_inspect_link'           => $inspect['inspectLink'],
+			'gsc_inspect_error'          => $inspect['error'],
+		];
 	}
 
 	/**

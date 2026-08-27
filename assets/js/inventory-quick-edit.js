@@ -161,20 +161,21 @@
 					'</div>' +
 					'<div class="forwp-seo-quick-edit-panel__layout">' +
 						'<div class="forwp-seo-quick-edit-panel__main">' +
-							'<div class="forwp-seo-quick-edit-panel__main-grid">' +
-								'<label class="forwp-seo-quick-edit-panel__field">' +
-									'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.seoTitle ) + '</span>' +
-									'<input type="text" class="forwp-seo-field-seo-title" value="" autocomplete="off" />' +
-								'</label>' +
-								'<label class="forwp-seo-quick-edit-panel__field">' +
-									'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.focusKw ) + '</span>' +
-									'<input type="text" class="forwp-seo-field-focus-keyword" value="" autocomplete="off" />' +
-								'</label>' +
-								'<label class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--wide">' +
-									'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.metaDesc ) + '</span>' +
-									'<textarea class="forwp-seo-field-meta-description" rows="4"></textarea>' +
-								'</label>' +
-							'</div>' +
+							'<label class="forwp-seo-quick-edit-panel__field">' +
+								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.seoTitle ) + '</span>' +
+								'<input type="text" class="forwp-seo-field-seo-title" value="" autocomplete="off" />' +
+							'</label>' +
+							'<label class="forwp-seo-quick-edit-panel__field">' +
+								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.metaDesc ) + '</span>' +
+								'<textarea class="forwp-seo-field-meta-description" rows="4"></textarea>' +
+							'</label>' +
+						'</div>' +
+						'<div class="forwp-seo-quick-edit-panel__focus">' +
+							'<label class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--focus">' +
+								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.focusKw ) + '</span>' +
+								'<p class="forwp-seo-quick-edit-panel__hint">' + escHtml( cfg.i18n.focusKwHint ) + '</p>' +
+								'<textarea class="forwp-seo-field-focus-keyphrases" rows="4" spellcheck="false"></textarea>' +
+							'</label>' +
 						'</div>' +
 						'<div class="forwp-seo-quick-edit-panel__aside">' +
 							'<div class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--og">' +
@@ -203,7 +204,8 @@
 
 		tr.querySelector( '.forwp-seo-field-seo-title' ).value = item.seo_title || '';
 		tr.querySelector( '.forwp-seo-field-meta-description' ).value = item.meta_description || '';
-		tr.querySelector( '.forwp-seo-field-focus-keyword' ).value = item.focus_keyword || '';
+		tr.querySelector( '.forwp-seo-field-focus-keyphrases' ).value =
+			item.focus_keyphrases_text || item.focus_keyword || '';
 		initOgImagePicker( tr, item );
 
 		return tr;
@@ -224,7 +226,10 @@
 			metaDesc.innerHTML = excerpt( item.meta_description, 80 );
 		}
 		if ( focusKw ) {
-			focusKw.innerHTML = excerpt( item.focus_keyword, 80 );
+			focusKw.innerHTML = excerpt(
+				item.focus_keyphrases_text || item.focus_keyword || '',
+				80
+			);
 		}
 		if ( ogImage ) {
 			ogImage.innerHTML = ogImageCell( item.og_image || '' );
@@ -247,6 +252,7 @@
 			seo_title: item.seo_title || '',
 			meta_description: item.meta_description || '',
 			focus_keyword: item.focus_keyword || '',
+			focus_keyphrases_text: item.focus_keyphrases_text || item.focus_keyword || '',
 			og_image: item.og_image || '',
 		} ) );
 	}
@@ -260,7 +266,7 @@
 		var payload = {
 			seo_title: inlineRow.querySelector( '.forwp-seo-field-seo-title' ).value,
 			meta_description: inlineRow.querySelector( '.forwp-seo-field-meta-description' ).value,
-			focus_keyword: inlineRow.querySelector( '.forwp-seo-field-focus-keyword' ).value,
+			focus_keyphrases: inlineRow.querySelector( '.forwp-seo-field-focus-keyphrases' ).value,
 			og_image: inlineRow.querySelector( '.forwp-seo-field-og-image' ).value,
 		};
 

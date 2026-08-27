@@ -110,6 +110,7 @@ final class InventoryPage {
 		$table = new InventoryListTable( $repository );
 		$table->set_show_language( $show_lang );
 		$table->set_show_gsc_metrics( self::should_show_gsc_metrics() );
+		$table->set_show_gsc_indexing( self::should_show_gsc_indexing() );
 		$table->set_filters( $filters );
 		$table->set_redirect_base(
 			add_query_arg(
@@ -235,7 +236,7 @@ final class InventoryPage {
 							<option value="any" <?php selected( $filters['missing'], 'any' ); ?>><?php esc_html_e( 'Has missing fields', '4wp-seo-helper' ); ?></option>
 							<option value="title" <?php selected( $filters['missing'], 'title' ); ?>><?php esc_html_e( 'Missing title', '4wp-seo-helper' ); ?></option>
 							<option value="description" <?php selected( $filters['missing'], 'description' ); ?>><?php esc_html_e( 'Missing description', '4wp-seo-helper' ); ?></option>
-							<option value="focus_keyword" <?php selected( $filters['missing'], 'focus_keyword' ); ?>><?php esc_html_e( 'Missing focus keyword', '4wp-seo-helper' ); ?></option>
+							<option value="focus_keyword" <?php selected( $filters['missing'], 'focus_keyword' ); ?>><?php esc_html_e( 'Missing focus keyphrases', '4wp-seo-helper' ); ?></option>
 							<option value="og_image" <?php selected( $filters['missing'], 'og_image' ); ?>><?php esc_html_e( 'Missing OG image', '4wp-seo-helper' ); ?></option>
 						</select>
 						<?php submit_button( __( 'Filter', '4wp-seo-helper' ), '', 'forwp_seo_inventory_filter', false ); ?>
@@ -399,6 +400,8 @@ final class InventoryPage {
 
 		$table = new InventoryListTable( $repository );
 		$table->set_show_language( $show_lang );
+		$table->set_show_gsc_metrics( self::should_show_gsc_metrics() );
+		$table->set_show_gsc_indexing( self::should_show_gsc_indexing() );
 		$table->set_filters( [] );
 		$table->set_redirect_base(
 			add_query_arg(
@@ -436,7 +439,7 @@ final class InventoryPage {
 		<?php
 	}
 
-	private static function should_show_gsc_metrics(): bool {
+	public static function should_show_gsc_metrics(): bool {
 		if ( ! Release::is_module_public( Release::MODULE_GSC ) || ! GscModule::get_instance()->is_enabled() ) {
 			return false;
 		}
@@ -456,5 +459,18 @@ final class InventoryPage {
 			'web',
 			ReportPeriod::period_key_current()
 		);
+	}
+
+	public static function should_show_gsc_indexing(): bool {
+		if ( ! Release::is_module_public( Release::MODULE_GSC ) || ! GscModule::get_instance()->is_enabled() ) {
+			return false;
+		}
+
+		$admin = GscAdmin::get_instance();
+		if ( ! $admin->is_connected() ) {
+			return false;
+		}
+
+		return '' !== GscAdmin::get_site_property();
 	}
 }

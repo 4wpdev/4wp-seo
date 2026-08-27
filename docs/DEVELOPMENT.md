@@ -113,6 +113,19 @@ add_filter(
 );
 ```
 
+### Focus keyphrases
+
+Inventory stores **`focus_keyphrases: string[]`** in post meta `_forwp_seo_focus_keyphrases` (newline-separated).
+
+| Rule | Value |
+| --- | --- |
+| **UI** | Quick Edit `<textarea>` — one phrase per line |
+| **Primary** | first line → Yoast `_yoast_wpseo_focuskw` on save |
+| **API** | `focus_keyphrases` (string or array) or legacy `focus_keyword` |
+| **Why** | GSC returns dozens of queries per URL; one Yoast field is not enough |
+
+Spec: [seo-metadata.md](../../../../docs/seo-metadata.md) (4wp.dev site docs).
+
 ## License
 
 GPL v2 or later. See [`4wp-seo-helper.php`](../4wp-seo-helper.php).

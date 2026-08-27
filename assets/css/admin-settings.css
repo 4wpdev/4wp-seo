@@ -28,6 +28,22 @@
 	display: block;
 }
 
+.forwp-seo-admin-heading__text {
+	align-items: baseline;
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.forwp-seo-admin-heading__version {
+	color: #646970;
+	font-size: 0.65em;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+
 .forwp-seo-admin-lead {
 	color: #646970;
 	font-size: 13px;
