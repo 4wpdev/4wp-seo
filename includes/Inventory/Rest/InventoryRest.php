@@ -338,7 +338,12 @@ final class InventoryRest {
 			return new \WP_Error( 'invalid_lanes', __( 'Lanes object is required.', '4wp-seo-helper' ), [ 'status' => 400 ] );
 		}
 
-		$saved = $this->priority_queue->set_lanes( $lanes );
+		$visible_ids = $params['visible_ids'] ?? null;
+		if ( is_array( $visible_ids ) ) {
+			$saved = $this->priority_queue->merge_visible_lanes( $lanes, $visible_ids );
+		} else {
+			$saved = $this->priority_queue->set_lanes( $lanes );
+		}
 		PriorityQueue::reset_cache();
 
 		return [

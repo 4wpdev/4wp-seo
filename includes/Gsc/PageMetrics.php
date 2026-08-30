@@ -50,7 +50,7 @@ final class PageMetrics {
 			$records[ $index ]['gsc_impressions']  = $impressions;
 			$records[ $index ]['gsc_position']     = $position;
 			$records[ $index ]['gsc_ctr']          = $ctr;
-			$records[ $index ]['gsc_top_queries']  = array_slice( $queries_path[ $path ] ?? [], 0, 3 );
+			$records[ $index ]['gsc_top_queries']  = array_slice( $queries_path[ $path ] ?? [], 0, 8 );
 		}
 
 		return $records;

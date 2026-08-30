@@ -14,9 +14,22 @@ final class PostTypeDiscovery {
 	private static ?array $cached = null;
 
 	/**
+	 * Post types shown in inventory after saved user exclusions.
+	 *
 	 * @return list<string>
 	 */
 	public static function get_slugs(): array {
+		return array_values(
+			array_diff( self::get_discovered_slugs(), ExcludedPostTypes::get() )
+		);
+	}
+
+	/**
+	 * Inventory candidates before the saved user exclude list.
+	 *
+	 * @return list<string>
+	 */
+	public static function get_discovered_slugs(): array {
 		if ( null !== self::$cached ) {
 			return self::$cached;
 		}
@@ -113,10 +126,35 @@ final class PostTypeDiscovery {
 	 * @return list<array{slug: string, label: string}>
 	 */
 	public static function get_labeled(): array {
+		return self::label_slugs( self::get_slugs() );
+	}
+
+	/**
+	 * All manageable types, including those the user has excluded.
+	 *
+	 * @return list<array{slug: string, label: string, excluded: bool}>
+	 */
+	public static function get_manageable_labeled(): array {
+		$excluded = array_fill_keys( ExcludedPostTypes::get(), true );
+		$items    = [];
+
+		foreach ( self::label_slugs( self::get_discovered_slugs() ) as $type ) {
+			$type['excluded'] = isset( $excluded[ $type['slug'] ] );
+			$items[]           = $type;
+		}
+
+		return $items;
+	}
+
+	/**
+	 * @param list<string> $slugs
+	 * @return list<array{slug: string, label: string}>
+	 */
+	private static function label_slugs( array $slugs ): array {
 		$labeled = [];
 
-		foreach ( self::get_slugs() as $slug ) {
-			$object = get_post_type_object( $slug );
+		foreach ( $slugs as $slug ) {
+			$object    = get_post_type_object( $slug );
 			$labeled[] = [
 				'slug'  => $slug,
 				'label' => $object instanceof \WP_Post_Type ? $object->labels->singular_name : $slug,

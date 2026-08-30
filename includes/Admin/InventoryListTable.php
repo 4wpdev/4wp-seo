@@ -5,6 +5,7 @@
 
 namespace Forwp\SeoHelper\Admin;
 
+use Forwp\SeoHelper\Admin\DashboardPage;
 use Forwp\SeoHelper\Core\Release;
 use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
 use Forwp\SeoHelper\Gsc\Module as GscModule;
@@ -169,8 +170,8 @@ final class InventoryListTable extends \WP_List_Table {
 	public function prepare_items(): void {
 		$this->process_bulk_action();
 
-		$per_page = 999;
-		$page     = 1;
+		$per_page = $this->get_items_per_page( Menu::INVENTORY_PER_PAGE_OPTION, Menu::INVENTORY_PER_PAGE_DEFAULT );
+		$page     = $this->get_pagenum();
 
 		$columns  = $this->get_columns();
 		$hidden   = get_hidden_columns( $this->screen );
@@ -185,8 +186,11 @@ final class InventoryListTable extends \WP_List_Table {
 				'lang'             => (string) ( $this->filters['lang'] ?? '' ),
 				'status'           => (string) ( $this->filters['status'] ?? 'publish' ),
 				'missing'          => (string) ( $this->filters['missing'] ?? '' ),
+				'max_score'        => ! empty( $this->filters['max_score'] ) ? (int) $this->filters['max_score'] : null,
 				'search'           => (string) ( $this->filters['search'] ?? '' ),
+				'post_id'          => ! empty( $this->filters['post_id'] ) ? (int) $this->filters['post_id'] : 0,
 				'sort_by_priority' => true,
+				'priority_filter'  => $this->priority_filter,
 			]
 		);
 
@@ -514,6 +518,12 @@ final class InventoryListTable extends \WP_List_Table {
 			);
 		}
 
+		$actions['history'] = sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( DashboardPage::post_history_url( $post_id ) ),
+			esc_html__( 'History', '4wp-seo-helper' )
+		);
+
 		return $output . $this->row_actions( $actions, true );
 	}
 
@@ -528,16 +538,21 @@ final class InventoryListTable extends \WP_List_Table {
 
 		$data = wp_json_encode(
 			[
-				'post_id'          => (int) $item['post_id'],
-				'seo_title'        => (string) ( $item['seo_title'] ?? '' ),
-				'meta_description' => (string) ( $item['meta_description'] ?? '' ),
-				'focus_keyword'    => (string) ( $item['focus_keyword'] ?? '' ),
+				'post_id'               => (int) $item['post_id'],
+				'seo_title'             => (string) ( $item['seo_title'] ?? '' ),
+				'meta_description'      => (string) ( $item['meta_description'] ?? '' ),
+				'focus_keyword'         => (string) ( $item['focus_keyword'] ?? '' ),
 				'focus_keyphrases_text' => (string) ( $item['focus_keyphrases_text'] ?? '' ),
-				'og_image'         => (string) ( $item['og_image'] ?? '' ),
+				'og_image'              => (string) ( $item['og_image'] ?? '' ),
+				'gsc_clicks'            => (int) ( $item['gsc_clicks'] ?? 0 ),
+				'gsc_impressions'       => (int) ( $item['gsc_impressions'] ?? 0 ),
+				'gsc_position'          => (float) ( $item['gsc_position'] ?? 0 ),
+				'gsc_ctr'               => (float) ( $item['gsc_ctr'] ?? 0 ),
+				'gsc_top_queries'       => is_array( $item['gsc_top_queries'] ?? null ) ? $item['gsc_top_queries'] : [],
 			]
 		);
 
-		echo '<tr class="forwp-seo-inventory-row forwp-seo-inventory-row--draggable';
+		echo '<tr id="forwp-seo-row-' . esc_attr( (string) (int) $item['post_id'] ) . '" class="forwp-seo-inventory-row forwp-seo-inventory-row--draggable';
 		if ( ! empty( $item['priority'] ) ) {
 			echo ' forwp-seo-inventory-row--queued';
 		}
@@ -758,7 +773,7 @@ final class InventoryListTable extends \WP_List_Table {
 
 		if ( ! empty( $queries ) ) {
 			$html .= '<ul class="forwp-seo-gsc-inventory__queries">';
-			foreach ( $queries as $query_row ) {
+			foreach ( array_slice( $queries, 0, 3 ) as $query_row ) {
 				$query = (string) ( $query_row['query'] ?? '' );
 				if ( '' === $query ) {
 					continue;

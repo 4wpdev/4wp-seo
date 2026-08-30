@@ -38,6 +38,20 @@
 		return table.querySelectorAll( '.forwp-seo-inventory-row[data-priority-group="' + priority + '"]' ).length;
 	}
 
+	function collectVisibleIds() {
+		var ids = [];
+		if ( ! table ) {
+			return ids;
+		}
+		table.querySelectorAll( '.forwp-seo-inventory-row[data-post-id]' ).forEach( function ( row ) {
+			var id = parseInt( row.getAttribute( 'data-post-id' ), 10 );
+			if ( id ) {
+				ids.push( id );
+			}
+		} );
+		return ids;
+	}
+
 	function collectLanesFromTable() {
 		var lanes = { '1': [], '2': [], '3': [] };
 		if ( ! table ) {
@@ -367,7 +381,10 @@
 				'Content-Type': 'application/json',
 				'X-WP-Nonce': cfg.nonce,
 			},
-			body: JSON.stringify( { lanes: collectLanesFromTable() } ),
+			body: JSON.stringify( {
+				lanes: collectLanesFromTable(),
+				visible_ids: collectVisibleIds(),
+			} ),
 			credentials: 'same-origin',
 		} )
 			.then( function ( response ) {
@@ -626,5 +643,19 @@
 		initGroupCollapse();
 	}
 
+	function highlightInventoryRow() {
+		var hash = window.location.hash;
+		if ( ! hash || hash.indexOf( '#forwp-seo-row-' ) !== 0 ) {
+			return;
+		}
+		var row = document.querySelector( hash );
+		if ( ! row ) {
+			return;
+		}
+		row.classList.add( 'is-highlight' );
+		row.scrollIntoView( { block: 'center', behavior: 'smooth' } );
+	}
+
 	initInventoryTable();
+	highlightInventoryRow();
 } )();

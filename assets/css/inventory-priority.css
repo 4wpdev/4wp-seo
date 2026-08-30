@@ -179,6 +179,10 @@
 	opacity: 0.65;
 }
 
+.forwp-seo-inventory-row.is-highlight td {
+	background: #fff8e5 !important;
+}
+
 .forwp-seo-index-pill {
 	border-radius: 999px;
 	display: inline-block;
@@ -816,6 +820,15 @@
 	padding: 12px 16px;
 }
 
+.forwp-seo-inventory .tablenav {
+	height: auto;
+	min-height: 30px;
+}
+
+.forwp-seo-inventory .tablenav.bottom {
+	margin-top: 8px;
+}
+
 .forwp-seo-inventory .forwp-seo-inventory__toolbar {
 	align-items: center;
 	display: flex;
@@ -825,6 +838,12 @@
 	justify-content: space-between;
 	margin: 12px 0 8px;
 	min-height: 32px;
+}
+
+.forwp-seo-inventory__excluded {
+	color: #646970;
+	font-size: 13px;
+	margin: 0 0 10px;
 }
 
 .forwp-seo-inventory .forwp-seo-inventory__toolbar .alignleft.actions {
@@ -891,19 +910,40 @@
 .forwp-seo-inventory .forwp-seo-quick-edit-panel__layout {
 	align-items: start;
 	display: grid;
-	gap: 20px 24px;
-	grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+	gap: 20px 28px;
+	grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-panel__col-primary,
+.forwp-seo-inventory .forwp-seo-quick-edit-panel__col-focus,
+.forwp-seo-inventory .forwp-seo-quick-edit-panel__copy {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-width: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-panel__col-focus {
+	border-left: 1px solid #dcdcde;
+	padding-left: 24px;
 }
 
 .forwp-seo-inventory .forwp-seo-quick-edit-panel__main-grid {
+	align-items: start;
 	display: grid;
-	gap: 12px 16px;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 16px 20px;
+	grid-template-columns: minmax(0, 1fr) 168px;
 }
 
 .forwp-seo-inventory .forwp-seo-quick-edit-panel__aside {
-	border-left: 1px solid #dcdcde;
-	padding-left: 24px;
+	min-width: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-panel__hint {
+	color: #646970;
+	font-size: 12px;
+	line-height: 1.4;
+	margin: 0;
 }
 
 .forwp-seo-inventory .forwp-seo-quick-edit-panel__field {
@@ -941,6 +981,10 @@
 	resize: vertical;
 }
 
+.forwp-seo-inventory .forwp-seo-field-focus-keyphrases {
+	min-height: 120px;
+}
+
 .forwp-seo-inventory .forwp-seo-og-image-control {
 	align-items: stretch;
 	display: flex;
@@ -955,18 +999,20 @@
 	border-radius: 2px;
 	display: flex;
 	flex: none;
-	height: 160px;
+	height: 120px;
 	justify-content: center;
 	overflow: hidden;
 	text-align: center;
-	width: 100%;
+	width: 168px;
 }
 
 .forwp-seo-inventory .forwp-seo-og-image-preview img {
 	display: block;
-	height: 100%;
-	object-fit: cover;
-	width: 100%;
+	height: auto;
+	max-height: 100%;
+	max-width: 100%;
+	object-fit: contain;
+	width: auto;
 }
 
 .forwp-seo-inventory .forwp-seo-og-image-preview.has-image .forwp-seo-og-image-preview__placeholder {
@@ -990,6 +1036,70 @@
 .forwp-seo-inventory .forwp-seo-og-image-actions .button {
 	text-align: center;
 	width: 100%;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__metrics {
+	color: #1d2327;
+	font-size: 12px;
+	font-weight: 600;
+	margin: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__empty {
+	color: #646970;
+	font-size: 12px;
+	margin: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__list {
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	list-style: none;
+	margin: 0;
+	max-height: 180px;
+	overflow: auto;
+	padding: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__item {
+	align-items: center;
+	border-bottom: 1px solid #dcdcde;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	padding: 6px 8px;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__item:last-child {
+	border-bottom: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__query {
+	color: #1d2327;
+	font-size: 12px;
+	line-height: 1.4;
+	min-width: 0;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__stat {
+	color: #646970;
+	font-weight: 400;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__add {
+	flex: none;
+	white-space: nowrap;
+}
+
+.forwp-seo-inventory .forwp-seo-quick-edit-gsc__add:disabled {
+	color: #8c8f94;
+	cursor: default;
 }
 
 .forwp-seo-inventory .forwp-seo-quick-edit-panel__actions {
@@ -1033,18 +1143,15 @@
 		width: 100%;
 	}
 
-	.forwp-seo-inventory .forwp-seo-quick-edit-panel__layout {
+	.forwp-seo-inventory .forwp-seo-quick-edit-panel__layout,
+	.forwp-seo-inventory .forwp-seo-quick-edit-panel__main-grid {
 		grid-template-columns: 1fr;
 	}
 
-	.forwp-seo-inventory .forwp-seo-quick-edit-panel__aside {
+	.forwp-seo-inventory .forwp-seo-quick-edit-panel__col-focus {
 		border-left: 0;
 		border-top: 1px solid #dcdcde;
 		padding-left: 0;
 		padding-top: 16px;
-	}
-
-	.forwp-seo-inventory .forwp-seo-quick-edit-panel__main-grid {
-		grid-template-columns: 1fr;
 	}
 }

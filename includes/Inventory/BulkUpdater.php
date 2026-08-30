@@ -97,6 +97,7 @@ final class BulkUpdater {
 				continue;
 			}
 
+			HistoryLogger::record_seo( $post_id );
 			++$updated;
 		}
 

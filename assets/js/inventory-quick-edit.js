@@ -104,6 +104,119 @@
 		}
 	}
 
+	function focusPhraseLines( textarea ) {
+		if ( ! textarea ) {
+			return [];
+		}
+		return textarea.value.split( /\r?\n/ ).map( function ( line ) {
+			return line.trim();
+		} ).filter( Boolean );
+	}
+
+	function phraseAlreadyPresent( textarea, phrase ) {
+		var needle = String( phrase || '' ).trim().toLowerCase();
+		if ( ! needle ) {
+			return false;
+		}
+		return focusPhraseLines( textarea ).some( function ( line ) {
+			return line.toLowerCase() === needle;
+		} );
+	}
+
+	function addFocusPhrase( textarea, phrase ) {
+		var value = String( phrase || '' ).trim();
+		if ( ! textarea || ! value || phraseAlreadyPresent( textarea, value ) ) {
+			return false;
+		}
+		var lines = focusPhraseLines( textarea );
+		lines.push( value );
+		textarea.value = lines.join( '\n' );
+		return true;
+	}
+
+	function formatGscMetrics( item ) {
+		var clicks = parseInt( item.gsc_clicks, 10 ) || 0;
+		var impressions = parseInt( item.gsc_impressions, 10 ) || 0;
+		var position = parseFloat( item.gsc_position ) || 0;
+		if ( ! clicks && ! impressions ) {
+			return '';
+		}
+		var template = cfg.i18n.gscMetrics || '%1$s clicks · %2$s impr. · Pos %3$s';
+		return template
+			.replace( '%1$s', String( clicks ) )
+			.replace( '%2$s', String( impressions ) )
+			.replace( '%3$s', position > 0 ? position.toFixed( 1 ) : '—' );
+	}
+
+	function buildGscSuggestions( item ) {
+		var queries = Array.isArray( item.gsc_top_queries ) ? item.gsc_top_queries : [];
+		var metrics = formatGscMetrics( item );
+		var html = '<div class="forwp-seo-quick-edit-gsc">';
+		html += '<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.gscQueries ) + '</span>';
+		if ( metrics ) {
+			html += '<p class="forwp-seo-quick-edit-gsc__metrics">' + escHtml( metrics ) + '</p>';
+		}
+		html += '<p class="forwp-seo-quick-edit-panel__hint">' + escHtml( cfg.i18n.gscHint ) + '</p>';
+
+		if ( ! queries.length ) {
+			html += '<p class="forwp-seo-quick-edit-gsc__empty">' + escHtml( cfg.i18n.gscEmpty ) + '</p>';
+			html += '</div>';
+			return html;
+		}
+
+		html += '<ul class="forwp-seo-quick-edit-gsc__list">';
+		queries.forEach( function ( row ) {
+			var query = row && row.query ? String( row.query ) : '';
+			if ( ! query ) {
+				return;
+			}
+			var extra = [];
+			if ( row.clicks ) {
+				extra.push( String( row.clicks ) + ' clk' );
+			}
+			if ( row.impressions ) {
+				extra.push( String( row.impressions ) + ' impr' );
+			}
+			html += '<li class="forwp-seo-quick-edit-gsc__item">';
+			html += '<span class="forwp-seo-quick-edit-gsc__query" title="' + escHtml( query ) + '">' + escHtml( query );
+			if ( extra.length ) {
+				html += ' <span class="forwp-seo-quick-edit-gsc__stat">(' + escHtml( extra.join( ' · ' ) ) + ')</span>';
+			}
+			html += '</span>';
+			html += '<button type="button" class="button-link forwp-seo-quick-edit-gsc__add" data-query="' + escHtml( query ) + '">' + escHtml( cfg.i18n.gscAdd ) + '</button>';
+			html += '</li>';
+		} );
+		html += '</ul></div>';
+		return html;
+	}
+
+	function syncGscAddButtons( inlineRow ) {
+		var textarea = inlineRow.querySelector( '.forwp-seo-field-focus-keyphrases' );
+		inlineRow.querySelectorAll( '.forwp-seo-quick-edit-gsc__add' ).forEach( function ( button ) {
+			var query = button.getAttribute( 'data-query' ) || '';
+			var added = phraseAlreadyPresent( textarea, query );
+			button.disabled = added;
+			button.textContent = added ? ( cfg.i18n.gscAdded || cfg.i18n.gscAdd ) : cfg.i18n.gscAdd;
+		} );
+	}
+
+	function initGscSuggestions( inlineRow ) {
+		var textarea = inlineRow.querySelector( '.forwp-seo-field-focus-keyphrases' );
+		syncGscAddButtons( inlineRow );
+		inlineRow.querySelectorAll( '.forwp-seo-quick-edit-gsc__add' ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				if ( addFocusPhrase( textarea, button.getAttribute( 'data-query' ) || '' ) ) {
+					syncGscAddButtons( inlineRow );
+				}
+			} );
+		} );
+		if ( textarea ) {
+			textarea.addEventListener( 'input', function () {
+				syncGscAddButtons( inlineRow );
+			} );
+		}
+	}
+
 	function initOgImagePicker( inlineRow, item ) {
 		var urlInput = inlineRow.querySelector( '.forwp-seo-field-og-image' );
 		var preview = inlineRow.querySelector( '.forwp-seo-og-image-preview' );
@@ -160,37 +273,42 @@
 						'<span class="forwp-seo-quick-edit-panel__legend">' + escHtml( cfg.i18n.quickEdit ) + '</span>' +
 					'</div>' +
 					'<div class="forwp-seo-quick-edit-panel__layout">' +
-						'<div class="forwp-seo-quick-edit-panel__main">' +
-							'<label class="forwp-seo-quick-edit-panel__field">' +
-								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.seoTitle ) + '</span>' +
-								'<input type="text" class="forwp-seo-field-seo-title" value="" autocomplete="off" />' +
-							'</label>' +
-							'<label class="forwp-seo-quick-edit-panel__field">' +
-								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.metaDesc ) + '</span>' +
-								'<textarea class="forwp-seo-field-meta-description" rows="4"></textarea>' +
-							'</label>' +
-						'</div>' +
-						'<div class="forwp-seo-quick-edit-panel__focus">' +
-							'<label class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--focus">' +
-								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.focusKw ) + '</span>' +
-								'<p class="forwp-seo-quick-edit-panel__hint">' + escHtml( cfg.i18n.focusKwHint ) + '</p>' +
-								'<textarea class="forwp-seo-field-focus-keyphrases" rows="4" spellcheck="false"></textarea>' +
-							'</label>' +
-						'</div>' +
-						'<div class="forwp-seo-quick-edit-panel__aside">' +
-							'<div class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--og">' +
-								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.ogImage ) + '</span>' +
-								'<div class="forwp-seo-og-image-control">' +
-									'<div class="forwp-seo-og-image-preview" role="img">' +
-										'<span class="forwp-seo-og-image-preview__placeholder">' + escHtml( cfg.i18n.noImage ) + '</span>' +
-									'</div>' +
-									'<div class="forwp-seo-og-image-actions">' +
-										'<input type="hidden" class="forwp-seo-field-og-image" value="" />' +
-										'<button type="button" class="button forwp-seo-og-image-select">' + escHtml( cfg.i18n.selectOgImage ) + '</button>' +
-										'<button type="button" class="button-link forwp-seo-og-image-remove">' + escHtml( cfg.i18n.removeImage ) + '</button>' +
+						'<div class="forwp-seo-quick-edit-panel__col-primary">' +
+							'<div class="forwp-seo-quick-edit-panel__main-grid">' +
+								'<div class="forwp-seo-quick-edit-panel__copy">' +
+									'<label class="forwp-seo-quick-edit-panel__field">' +
+										'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.seoTitle ) + '</span>' +
+										'<input type="text" class="forwp-seo-field-seo-title" value="" autocomplete="off" />' +
+									'</label>' +
+									'<label class="forwp-seo-quick-edit-panel__field">' +
+										'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.metaDesc ) + '</span>' +
+										'<textarea class="forwp-seo-field-meta-description" rows="4"></textarea>' +
+									'</label>' +
+								'</div>' +
+								'<div class="forwp-seo-quick-edit-panel__aside">' +
+									'<div class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--og">' +
+										'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.ogImage ) + '</span>' +
+										'<div class="forwp-seo-og-image-control">' +
+											'<div class="forwp-seo-og-image-preview" role="img">' +
+												'<span class="forwp-seo-og-image-preview__placeholder">' + escHtml( cfg.i18n.noImage ) + '</span>' +
+											'</div>' +
+											'<div class="forwp-seo-og-image-actions">' +
+												'<input type="hidden" class="forwp-seo-field-og-image" value="" />' +
+												'<button type="button" class="button forwp-seo-og-image-select">' + escHtml( cfg.i18n.selectOgImage ) + '</button>' +
+												'<button type="button" class="button-link forwp-seo-og-image-remove">' + escHtml( cfg.i18n.removeImage ) + '</button>' +
+											'</div>' +
+										'</div>' +
 									'</div>' +
 								'</div>' +
 							'</div>' +
+						'</div>' +
+						'<div class="forwp-seo-quick-edit-panel__col-focus">' +
+							'<label class="forwp-seo-quick-edit-panel__field forwp-seo-quick-edit-panel__field--focus">' +
+								'<span class="forwp-seo-quick-edit-panel__label">' + escHtml( cfg.i18n.focusKw ) + '</span>' +
+								'<p class="forwp-seo-quick-edit-panel__hint">' + escHtml( cfg.i18n.focusKwHint ) + '</p>' +
+								'<textarea class="forwp-seo-field-focus-keyphrases" rows="5" spellcheck="false"></textarea>' +
+							'</label>' +
+							buildGscSuggestions( item ) +
 						'</div>' +
 					'</div>' +
 					'<div class="forwp-seo-quick-edit-panel__actions">' +
@@ -207,6 +325,7 @@
 		tr.querySelector( '.forwp-seo-field-focus-keyphrases' ).value =
 			item.focus_keyphrases_text || item.focus_keyword || '';
 		initOgImagePicker( tr, item );
+		initGscSuggestions( tr );
 
 		return tr;
 	}
@@ -247,6 +366,13 @@
 			missing.textContent = list.join( ', ' );
 		}
 
+		var previous = {};
+		try {
+			previous = JSON.parse( row.getAttribute( 'data-item' ) || '{}' );
+		} catch ( ignore ) {
+			previous = {};
+		}
+
 		row.setAttribute( 'data-item', JSON.stringify( {
 			post_id: item.post_id,
 			seo_title: item.seo_title || '',
@@ -254,6 +380,11 @@
 			focus_keyword: item.focus_keyword || '',
 			focus_keyphrases_text: item.focus_keyphrases_text || item.focus_keyword || '',
 			og_image: item.og_image || '',
+			gsc_clicks: item.gsc_clicks != null ? item.gsc_clicks : previous.gsc_clicks,
+			gsc_impressions: item.gsc_impressions != null ? item.gsc_impressions : previous.gsc_impressions,
+			gsc_position: item.gsc_position != null ? item.gsc_position : previous.gsc_position,
+			gsc_ctr: item.gsc_ctr != null ? item.gsc_ctr : previous.gsc_ctr,
+			gsc_top_queries: Array.isArray( item.gsc_top_queries ) ? item.gsc_top_queries : ( previous.gsc_top_queries || [] ),
 		} ) );
 	}
 

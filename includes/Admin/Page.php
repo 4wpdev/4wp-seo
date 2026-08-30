@@ -10,7 +10,9 @@ use Forwp\SeoHelper\CrossPosting\Module as CrossPostingModule;
 use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
 use Forwp\SeoHelper\Gsc\Module as GscModule;
 use Forwp\SeoHelper\Gsc\Sync as GscSync;
+use Forwp\SeoHelper\Inventory\ExcludedPostTypes;
 use Forwp\SeoHelper\Inventory\Module as InventoryModule;
+use Forwp\SeoHelper\Inventory\PostTypeDiscovery;
 use Forwp\SeoHelper\Inventory\PriorityLabels;
 use Forwp\SeoHelper\Inventory\Repository;
 use Forwp\SeoHelper\Multilingual\Registry as MultilingualRegistry;
@@ -346,7 +348,47 @@ final class Page {
 			</form>
 		</div>
 
+		<?php self::render_excluded_post_types_panel(); ?>
+
 		<?php self::render_coming_soon_modules_panel(); ?>
+		<?php
+	}
+
+	private static function render_excluded_post_types_panel(): void {
+		$types = PostTypeDiscovery::get_manageable_labeled();
+		if ( [] === $types ) {
+			return;
+		}
+		?>
+		<div class="forwp-seo-panel">
+			<h2 class="forwp-seo-admin-section-title"><?php esc_html_e( 'Exclude post types', '4wp-seo-helper' ); ?></h2>
+			<p class="forwp-seo-admin-muted">
+				<?php esc_html_e( 'Hide CPTs that are not used on the front end from SEO Inventory. Saved until you uncheck them.', '4wp-seo-helper' ); ?>
+			</p>
+			<form method="post">
+				<?php wp_nonce_field( 'forwp_seo_settings', 'forwp_seo_settings_nonce' ); ?>
+				<input type="hidden" name="forwp_seo_save_excluded_post_types" value="1" />
+				<div class="forwp-seo-exclude-types">
+					<?php foreach ( $types as $type ) : ?>
+						<label class="forwp-seo-exclude-types__item">
+							<input
+								type="checkbox"
+								name="forwp_seo_excluded_post_types[]"
+								value="<?php echo esc_attr( $type['slug'] ); ?>"
+								<?php checked( $type['excluded'] ); ?>
+							/>
+							<span>
+								<?php echo esc_html( $type['label'] ); ?>
+								<code><?php echo esc_html( $type['slug'] ); ?></code>
+							</span>
+						</label>
+					<?php endforeach; ?>
+				</div>
+				<div class="forwp-seo-form-actions">
+					<?php submit_button( __( 'Save excluded types', '4wp-seo-helper' ), 'secondary', 'submit', false ); ?>
+				</div>
+			</form>
+		</div>
 		<?php
 	}
 
@@ -522,6 +564,13 @@ final class Page {
 			$saved = 'settings';
 		}
 
+		if ( ! empty( $_POST['forwp_seo_save_excluded_post_types'] ) ) {
+			$slugs = isset( $_POST['forwp_seo_excluded_post_types'] ) ? (array) wp_unslash( $_POST['forwp_seo_excluded_post_types'] ) : [];
+			ExcludedPostTypes::set( $slugs );
+			$tab   = self::TAB_SETTINGS;
+			$saved = 'excluded_types';
+		}
+
 		if ( ! empty( $_POST['forwp_seo_save_priority_labels'] ) ) {
 			PriorityLabels::save(
 				[
@@ -559,6 +608,8 @@ final class Page {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', '4wp-seo-helper' ) . '</p></div>';
 			} elseif ( 'priority' === $saved ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Priority tiers saved.', '4wp-seo-helper' ) . '</p></div>';
+			} elseif ( 'excluded_types' === $saved ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Excluded post types saved.', '4wp-seo-helper' ) . '</p></div>';
 			}
 		}
 

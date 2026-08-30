@@ -4,7 +4,7 @@ Tags: seo, inventory, yoast, search console, google
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -195,6 +195,12 @@ No Google API calls are made until an administrator configures OAuth credentials
 
 == Changelog ==
 
+= 2.1.0 =
+* Inventory: real pagination tied to Screen Options; type filter no longer collides with WP `post_type`.
+* Inventory: persist excluded post types; two-column Quick Edit with GSC keyword suggestions.
+* Dashboard: URL change history (index, crawl, content, SEO, GSC) plus weak-page and weekly-growth KPIs.
+* Admin bar: fewer items — page permalink, last indexed date, Search Console, inventory jump (works with pagination), Edit.
+
 = 2.0.0 =
 * **Major release:** full Google Search Console integration merged with SEO Inventory.
 * GSC: OAuth connect/disconnect, property auto-match, local/staging manual picker, and property access guard.
@@ -220,6 +226,9 @@ No Google API calls are made until an administrator configures OAuth credentials
 * Future modules (TechArticle, LLMS.txt, cross posting) visible as Coming soon in admin.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Inventory pagination, exclude post types, dashboard history/KPIs, and a simpler admin bar with last-indexed date.
 
 = 2.0.0 =
 Major update: Google Search Console workspace, inventory GSC columns, property access guard, and indexing tools. Enable Search Console API in Google Cloud and verify site access after upgrading.

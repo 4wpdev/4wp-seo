@@ -5,6 +5,7 @@
 
 namespace Forwp\SeoHelper\Gsc;
 
+use Forwp\SeoHelper\Inventory\HistoryLogger;
 use Forwp\SeoHelper\SeoMeta\Registry as SeoMetaRegistry;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -101,7 +102,7 @@ final class Indexing {
 
 		$url     = (string) $status['inspectionUrl'];
 		$token   = Admin::get_instance()->get_access_token_for_sync();
-		$inspect = $this->inspect_and_store( $post_id, $url, $token, (string) $status['property'] );
+		$inspect = $this->inspect_and_store( $post_id, $url, $token, (string) $status['property'], true );
 
 		update_post_meta( $post_id, self::META_REQUESTED_AT, (string) time() );
 
@@ -180,7 +181,7 @@ final class Indexing {
 
 		if ( $live_inspect ) {
 			$token = $admin->get_access_token_for_sync();
-			$inspect_result      = $this->inspect_and_store( $post_id, $url, $token, $site );
+			$inspect_result      = $this->inspect_and_store( $post_id, $url, $token, $site, false );
 			$base['inspect']     = $inspect_result['inspect'];
 			$base['gscInspectUrl'] = $this->resolve_gsc_inspect_url( $post_id, $site, $url );
 		}
@@ -191,7 +192,7 @@ final class Indexing {
 	/**
 	 * @return array{inspect: array<string, string>}
 	 */
-	private function inspect_and_store( int $post_id, string $url, string $token, string $site ): array {
+	private function inspect_and_store( int $post_id, string $url, string $token, string $site, bool $index_request = false ): array {
 		$inspect = [
 			'coverage'         => '',
 			'verdict'          => '',
@@ -224,6 +225,7 @@ final class Indexing {
 		$inspect['inspectLink']     = esc_url_raw( (string) ( $result['inspectionResult']['inspectionResultLink'] ?? '' ) );
 
 		update_post_meta( $post_id, self::META_LAST_STATUS, wp_json_encode( $inspect ) );
+		HistoryLogger::on_inspect( $post_id, $inspect, $index_request );
 
 		return [ 'inspect' => $inspect ];
 	}

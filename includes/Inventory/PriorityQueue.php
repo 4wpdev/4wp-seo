@@ -65,6 +65,79 @@ final class PriorityQueue {
 	}
 
 	/**
+	 * Merge a paginated table snapshot into stored lanes without dropping off-page items.
+	 *
+	 * @param array<string|int, list<int|string>> $visible_lanes
+	 * @param list<int|string>                    $visible_ids
+	 * @return array{1: list<int>, 2: list<int>, 3: list<int>}
+	 */
+	public function merge_visible_lanes( array $visible_lanes, array $visible_ids ): array {
+		$stored      = $this->get_lanes();
+		$visible_ids = array_values(
+			array_unique(
+				array_filter(
+					array_map( 'intval', $visible_ids )
+				)
+			)
+		);
+		$visible_set = array_fill_keys( $visible_ids, true );
+
+		$incoming_by_lane = [
+			'1' => [],
+			'2' => [],
+			'3' => [],
+		];
+		$seen_incoming = [];
+
+		foreach ( self::LANE_IDS as $lane_id ) {
+			foreach ( (array) ( $visible_lanes[ $lane_id ] ?? [] ) as $id ) {
+				$id = (int) $id;
+				if ( $id <= 0 || ! isset( $visible_set[ $id ] ) || isset( $seen_incoming[ $id ] ) ) {
+					continue;
+				}
+				$incoming_by_lane[ $lane_id ][] = $id;
+				$seen_incoming[ $id ]           = true;
+			}
+		}
+
+		$merged = [
+			'1' => [],
+			'2' => [],
+			'3' => [],
+		];
+
+		foreach ( self::LANE_IDS as $lane_id ) {
+			$stripped  = [];
+			$insert_at = null;
+
+			foreach ( $stored[ $lane_id ] as $id ) {
+				if ( isset( $visible_set[ $id ] ) ) {
+					if ( null === $insert_at ) {
+						$insert_at = count( $stripped );
+					}
+					continue;
+				}
+				$stripped[] = $id;
+			}
+
+			$incoming = $incoming_by_lane[ $lane_id ];
+			if ( [] === $incoming ) {
+				$merged[ $lane_id ] = $stripped;
+				continue;
+			}
+
+			if ( null === $insert_at ) {
+				$insert_at = 0;
+			}
+
+			array_splice( $stripped, $insert_at, 0, $incoming );
+			$merged[ $lane_id ] = $stripped;
+		}
+
+		return $this->set_lanes( $merged );
+	}
+
+	/**
 	 * @param list<array<string, mixed>> $records
 	 * @return list<array<string, mixed>>
 	 */

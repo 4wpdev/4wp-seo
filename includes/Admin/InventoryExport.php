@@ -28,7 +28,7 @@ final class InventoryExport {
 		$args       = [
 			'page'      => isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1,
 			'per_page'  => 200,
-			'post_type' => sanitize_key( wp_unslash( (string) ( $_GET['post_type'] ?? '' ) ) ),
+			'post_type' => InventoryPage::get_requested_post_type(),
 			'lang'      => sanitize_key( wp_unslash( (string) ( $_GET['lang'] ?? '' ) ) ),
 			'status'    => sanitize_key( wp_unslash( (string) ( $_GET['status'] ?? 'publish' ) ) ),
 			'missing'   => sanitize_key( wp_unslash( (string) ( $_GET['missing'] ?? '' ) ) ),

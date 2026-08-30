@@ -34,11 +34,14 @@ final class Repository {
 		$status    = sanitize_key( (string) ( $args['status'] ?? 'publish' ) );
 		$missing   = sanitize_key( (string) ( $args['missing'] ?? '' ) );
 		$search    = sanitize_text_field( (string) ( $args['search'] ?? '' ) );
+		$post_id   = absint( $args['post_id'] ?? 0 );
 		$min_score = isset( $args['min_score'] ) && '' !== (string) $args['min_score'] ? (int) $args['min_score'] : null;
 		$max_score = isset( $args['max_score'] ) && '' !== (string) $args['max_score'] ? (int) $args['max_score'] : null;
-		$sort_by_priority = ! empty( $args['sort_by_priority'] );
+		$sort_by_priority    = ! empty( $args['sort_by_priority'] );
+		$priority_filter     = $args['priority_filter'] ?? null;
+		$has_priority_filter = null !== $priority_filter && '' !== $priority_filter && false !== $priority_filter;
 
-		$has_post_filters = '' !== $missing || null !== $min_score || null !== $max_score || $sort_by_priority;
+		$has_post_filters = '' !== $missing || null !== $min_score || null !== $max_score || $sort_by_priority || $has_priority_filter;
 
 		$query_args = [
 			'post_type'              => $this->resolve_post_types( $post_type ),
@@ -53,7 +56,11 @@ final class Repository {
 			'update_post_term_cache' => false,
 		];
 
-		if ( '' !== $search ) {
+		if ( $post_id > 0 ) {
+			$query_args['post__in']      = [ $post_id ];
+			$query_args['posts_per_page'] = 1;
+			$query_args['paged']         = 1;
+		} elseif ( '' !== $search ) {
 			$query_args['s'] = $search;
 		}
 
@@ -89,6 +96,22 @@ final class Repository {
 
 		if ( $sort_by_priority ) {
 			$records = ( new PriorityQueue() )->sort_records( $records );
+		}
+
+		if ( $has_priority_filter ) {
+			$records = array_values(
+				array_filter(
+					$records,
+					static function ( array $record ) use ( $priority_filter ): bool {
+						$priority = isset( $record['priority'] ) ? (int) $record['priority'] : 0;
+						if ( 'queued' === $priority_filter ) {
+							return $priority >= 1 && $priority <= 3;
+						}
+
+						return $priority === (int) $priority_filter;
+					}
+				)
+			);
 		}
 
 		if ( $has_post_filters ) {
@@ -142,11 +165,14 @@ final class Repository {
 		$ids = get_posts( $query_args );
 
 		$totals = [
-			'posts'             => 0,
-			'avg_completeness'  => 0,
-			'by_language'       => [],
-			'by_post_type'      => [],
-			'missing_counts'    => [
+			'posts'            => 0,
+			'avg_completeness' => 0,
+			'weak_count'       => 0,
+			'gap_count'        => 0,
+			'weakest'          => [],
+			'by_language'      => [],
+			'by_post_type'     => [],
+			'missing_counts'   => [
 				'title'         => 0,
 				'description'   => 0,
 				'focus_keyword' => 0,
@@ -155,6 +181,7 @@ final class Repository {
 		];
 
 		$score_sum = 0;
+		$ranked    = [];
 
 		foreach ( $ids as $post_id ) {
 			$post = get_post( (int) $post_id );
@@ -168,7 +195,21 @@ final class Repository {
 			}
 
 			++$totals['posts'];
-			$score_sum += (int) $record['completeness'];
+			$score = (int) $record['completeness'];
+			$score_sum += $score;
+			if ( $score < 50 ) {
+				++$totals['weak_count'];
+			}
+			if ( ! empty( $record['missing'] ) ) {
+				++$totals['gap_count'];
+			}
+			$ranked[] = [
+				'post_id'   => (int) $record['post_id'],
+				'title'     => (string) $record['wp_title'],
+				'score'     => $score,
+				'missing'   => $record['missing'],
+				'post_type' => (string) $record['post_type'],
+			];
 
 			$lang = (string) $record['lang'];
 			if ( ! isset( $totals['by_language'][ $lang ] ) ) {
@@ -203,6 +244,14 @@ final class Repository {
 			$totals['avg_completeness'] = (int) round( $score_sum / $totals['posts'] );
 		}
 
+		usort(
+			$ranked,
+			static function ( array $left, array $right ): int {
+				return $left['score'] <=> $right['score'];
+			}
+		);
+		$totals['weakest'] = array_slice( $ranked, 0, 8 );
+
 		foreach ( $totals['by_language'] as $lang => $data ) {
 			if ( $data['count'] > 0 ) {
 				$totals['by_language'][ $lang ]['avg_completeness'] = (int) round( $data['score_sum'] / $data['count'] );
@@ -218,6 +267,34 @@ final class Repository {
 		}
 
 		return $totals;
+	}
+
+	/**
+	 * Published inventory URLs with post_date_gmt in [after, before].
+	 */
+	public function count_published_between( string $after_gmt, string $before_gmt ): int {
+		$query = new \WP_Query(
+			[
+				'post_type'              => $this->get_supported_post_types(),
+				'post_status'            => 'publish',
+				'posts_per_page'         => 1,
+				'fields'                 => 'ids',
+				'ignore_sticky_posts'    => true,
+				'no_found_rows'          => false,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+				'date_query'             => [
+					[
+						'column'    => 'post_date_gmt',
+						'after'     => $after_gmt,
+						'before'    => $before_gmt,
+						'inclusive' => true,
+					],
+				],
+			]
+		);
+
+		return (int) $query->found_posts;
 	}
 
 	/**

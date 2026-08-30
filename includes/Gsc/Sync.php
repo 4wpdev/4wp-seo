@@ -5,6 +5,8 @@
 
 namespace Forwp\SeoHelper\Gsc;
 
+use Forwp\SeoHelper\Inventory\HistoryLogger;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -311,6 +313,10 @@ final class Sync {
 		$this->repository->log_sync_finish( $log_id, $ok ? 'ok' : 'error', $total_rows, $message );
 
 		update_option( 'forwp_seo_gsc_last_sync_at', gmdate( 'Y-m-d H:i:s' ) );
+
+		if ( $ok ) {
+			HistoryLogger::on_gsc_sync();
+		}
 
 		return [
 			'ok'      => $ok,

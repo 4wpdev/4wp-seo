@@ -22,7 +22,9 @@ final class Menu {
 	public const GSC_PAGE_SLUG             = 'forwp-seo-gsc';
 	public const OAUTH_PAGE_SLUG           = 'forwp-seo-gsc-oauth';
 	public const INVENTORY_PAGE_SLUG       = 'forwp-seo-inventory';
-	public const INVENTORY_PER_PAGE_OPTION = 'forwp_seo_inventory_per_page';
+	public const INVENTORY_POST_TYPE_ARG   = 'forwp_post_type';
+	public const INVENTORY_PER_PAGE_OPTION  = 'forwp_seo_inventory_per_page';
+	public const INVENTORY_PER_PAGE_DEFAULT = 20;
 
 	private static $instance = null;
 
@@ -44,6 +46,7 @@ final class Menu {
 
 	private function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
+		add_action( 'admin_init', [ $this, 'protect_plugin_screens' ], 0 );
 		add_action( 'admin_init', [ $this, 'handle_legacy_routes' ] );
 		add_action( 'admin_init', [ $this, 'handle_admin_form_posts' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
@@ -133,6 +136,21 @@ final class Menu {
 		if ( is_string( self::$inventory_page_hook ) && '' !== self::$inventory_page_hook ) {
 			add_action( 'load-' . self::$inventory_page_hook, [ $this, 'inventory_screen_options' ] );
 		}
+	}
+
+	/**
+	 * WordPress treats ?post_type=page (and other registered types) as a core screen.
+	 * That makes admin.php look up our submenu under admin.php?post_type=X and die with
+	 * "Cannot load forwp-seo-inventory". Clear $typenow on our plugin pages.
+	 */
+	public function protect_plugin_screens(): void {
+		global $plugin_page, $typenow;
+
+		if ( ! is_string( $plugin_page ) || ! str_starts_with( $plugin_page, 'forwp-seo' ) ) {
+			return;
+		}
+
+		$typenow = '';
 	}
 
 	public function handle_legacy_routes(): void {
@@ -267,7 +285,7 @@ final class Menu {
 			'per_page',
 			[
 				'label'   => __( 'Inventory items per page', '4wp-seo-helper' ),
-				'default' => 20,
+				'default' => self::INVENTORY_PER_PAGE_DEFAULT,
 				'option'  => self::INVENTORY_PER_PAGE_OPTION,
 			]
 		);
@@ -398,6 +416,14 @@ final class Menu {
 					'noImage'      => __( 'No image selected', '4wp-seo-helper' ),
 					'noOgImage'    => __( 'No OG image', '4wp-seo-helper' ),
 					'viewOgImage'  => __( 'View OG image', '4wp-seo-helper' ),
+					'saved'        => __( 'Saved.', '4wp-seo-helper' ),
+					'gscQueries'   => __( 'Search Console queries', '4wp-seo-helper' ),
+					'gscHint'      => __( 'Queries already sending traffic to this URL. Click Add to use as a focus keyphrase.', '4wp-seo-helper' ),
+					'gscEmpty'     => __( 'No Search Console queries synced for this URL yet.', '4wp-seo-helper' ),
+					/* translators: 1: clicks, 2: impressions, 3: average position */
+					'gscMetrics'   => __( '%1$s clicks · %2$s impr. · Pos %3$s', '4wp-seo-helper' ),
+					'gscAdd'       => __( 'Add', '4wp-seo-helper' ),
+					'gscAdded'     => __( 'Added', '4wp-seo-helper' ),
 				],
 			]
 		);

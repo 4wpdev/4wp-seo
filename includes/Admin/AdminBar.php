@@ -1,8 +1,6 @@
 <?php
 /**
- * Frontend/admin toolbar summary (Yoast-style scores + GSC shortcuts).
- *
- * Isolated like 4WP Weather Admin_Bar_Weather: small feature, separate from settings screens.
+ * Frontend toolbar: short page checklist (title, last indexed, GSC).
  */
 
 namespace Forwp\SeoHelper\Admin;
@@ -64,12 +62,12 @@ final class AdminBar {
 			'forwp-seo-admin-bar-gsc',
 			'forwpSeoAdminBarGsc',
 			[
-				'postId'     => $post_id,
-				'restRoot'   => rest_url( 'forwp-seo/v1/' ),
-				'nonce'      => wp_create_nonce( 'wp_rest' ),
-				'storedUrl'  => PropertyResolver::is_valid_inspection_result_link( $stored_link ) ? $stored_link : '',
-				'propertyUrl'=> PropertyResolver::search_console_property_url( GscAdmin::get_site_property() ),
-				'i18n'       => [
+				'postId'      => $post_id,
+				'restRoot'    => rest_url( 'forwp-seo/v1/' ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'storedUrl'   => PropertyResolver::is_valid_inspection_result_link( $stored_link ) ? $stored_link : '',
+				'propertyUrl' => PropertyResolver::search_console_property_url( GscAdmin::get_site_property() ),
+				'i18n'        => [
 					'opening' => __( 'Opening Search Console…', '4wp-seo-helper' ),
 					'error'   => __( 'Search Console inspect failed. Open your property in GSC and paste the URL manually.', '4wp-seo-helper' ),
 				],
@@ -88,17 +86,18 @@ final class AdminBar {
 		$wp_admin_bar->add_node(
 			[
 				'id'    => self::NODE_ID,
-				'href'  => admin_url( 'admin.php?page=' . Menu::PAGE_SLUG ),
+				'href'  => $post_id > 0 ? InventoryPage::url_for_post( $post_id ) : admin_url( 'admin.php?page=' . Menu::PAGE_SLUG ),
 				'title' => self::root_title( $seo ),
 				'meta'  => [
 					'class' => 'forwp-seo-admin-bar-root',
-					'title' => __( '4WP SEO Helper', '4wp-seo-helper' ),
+					'title' => __( '4WP SEO', '4wp-seo-helper' ),
 				],
 			]
 		);
 
 		if ( $post_id > 0 && is_array( $seo ) ) {
 			self::add_post_items( $wp_admin_bar, $post_id, $seo );
+			return;
 		}
 
 		$wp_admin_bar->add_node(
@@ -109,60 +108,40 @@ final class AdminBar {
 				'href'   => admin_url( 'admin.php?page=' . Menu::INVENTORY_PAGE_SLUG ),
 			]
 		);
-
-		$wp_admin_bar->add_node(
-			[
-				'parent' => self::NODE_ID,
-				'id'     => self::NODE_ID . '-settings',
-				'title'  => __( 'Settings', '4wp-seo-helper' ),
-				'href'   => admin_url( 'admin.php?page=' . Menu::SETTINGS_PAGE_SLUG ),
-			]
-		);
 	}
 
 	/**
 	 * @param array<string, mixed> $seo SEO payload.
 	 */
 	private static function add_post_items( \WP_Admin_Bar $wp_admin_bar, int $post_id, array $seo ): void {
-		$keyword = trim( (string) ( $seo['focusKeyword'] ?? '' ) );
-		$wp_admin_bar->add_node(
-			[
-				'parent' => self::NODE_ID,
-				'id'     => self::NODE_ID . '-keyword',
-				'title'  => sprintf(
-					/* translators: %s: focus keyphrase or em dash */
-					__( 'Focus keyphrase: %s', '4wp-seo-helper' ),
-					'' !== $keyword ? $keyword : '—'
-				),
-				'href'   => get_edit_post_link( $post_id, 'raw' ),
-			]
-		);
+		$title = get_the_title( $post_id );
+		$url   = (string) get_permalink( $post_id );
+		if ( '' === $title ) {
+			$title = '#' . $post_id;
+		}
 
 		$wp_admin_bar->add_node(
 			[
 				'parent' => self::NODE_ID,
-				'id'     => self::NODE_ID . '-seo',
-				'title'  => self::score_row(
-					__( 'SEO score', '4wp-seo-helper' ),
-					$seo['seo'] ?? null,
-					! empty( $seo['noFocus'] ),
-					(string) ( $seo['label'] ?? '' )
-				),
-				'href'   => get_edit_post_link( $post_id, 'raw' ),
+				'id'     => self::NODE_ID . '-page',
+				'title'  => self::row_label( __( 'Page', '4wp-seo-helper' ), $title ),
+				'href'   => '' !== $url ? $url : '',
+				'meta'   => [
+					'title' => __( 'Open this page', '4wp-seo-helper' ),
+				],
 			]
 		);
 
+		$indexed = self::last_indexed_label( $post_id );
 		$wp_admin_bar->add_node(
 			[
 				'parent' => self::NODE_ID,
-				'id'     => self::NODE_ID . '-read',
-				'title'  => self::score_row(
-					__( 'Readability', '4wp-seo-helper' ),
-					$seo['readability'] ?? null,
-					false,
-					''
-				),
-				'href'   => get_edit_post_link( $post_id, 'raw' ),
+				'id'     => self::NODE_ID . '-indexed',
+				'title'  => self::row_label( __( 'Last indexed', '4wp-seo-helper' ), $indexed['label'] ),
+				'href'   => false,
+				'meta'   => [
+					'title' => $indexed['title'],
+				],
 			]
 		);
 
@@ -184,17 +163,28 @@ final class AdminBar {
 			);
 		}
 
+		$wp_admin_bar->add_node(
+			[
+				'parent' => self::NODE_ID,
+				'id'     => self::NODE_ID . '-inventory',
+				'title'  => __( 'This URL in Inventory', '4wp-seo-helper' ),
+				'href'   => InventoryPage::url_for_post( $post_id ),
+			]
+		);
+
 		$edit = get_edit_post_link( $post_id, 'raw' );
 		if ( is_string( $edit ) && '' !== $edit ) {
 			$wp_admin_bar->add_node(
 				[
 					'parent' => self::NODE_ID,
 					'id'     => self::NODE_ID . '-edit',
-					'title'  => __( 'Edit in 4WP SEO Helper', '4wp-seo-helper' ),
+					'title'  => __( 'Edit', '4wp-seo-helper' ),
 					'href'   => $edit,
 				]
 			);
 		}
+
+		unset( $seo );
 	}
 
 	/**
@@ -205,23 +195,52 @@ final class AdminBar {
 		$dots = '';
 
 		if ( is_array( $seo ) ) {
-			$dots  = self::dot( self::tone( $seo['seo'] ?? null, ! empty( $seo['noFocus'] ) ), __( 'SEO score', '4wp-seo-helper' ) );
-			$dots .= self::dot( self::tone( $seo['readability'] ?? null, false ), __( 'Readability', '4wp-seo-helper' ) );
+			$dots = self::dot( self::tone( $seo['seo'] ?? null, ! empty( $seo['noFocus'] ) ), __( 'SEO score', '4wp-seo-helper' ) );
 		}
 
-		return $icon . $dots . '<span class="screen-reader-text">' . esc_html__( '4WP SEO Helper', '4wp-seo-helper' ) . '</span>';
+		return $icon . $dots . '<span class="screen-reader-text">' . esc_html__( '4WP SEO', '4wp-seo-helper' ) . '</span>';
 	}
 
-	private static function score_row( string $label, $score, bool $no_focus, string $title ): string {
-		$tone  = self::tone( $score, $no_focus );
-		$value = $no_focus || null === $score || '' === $score
-			? '—'
-			: (string) (int) $score;
-
-		$hint = '' !== $title ? $title : $label;
-
-		return self::dot( $tone, $hint ) . '<span class="forwp-seo-ab-label">' . esc_html( $label ) . '</span>'
+	private static function row_label( string $label, string $value ): string {
+		return '<span class="forwp-seo-ab-label">' . esc_html( $label ) . '</span> '
 			. '<span class="forwp-seo-ab-value">' . esc_html( $value ) . '</span>';
+	}
+
+	/**
+	 * @return array{label:string,title:string}
+	 */
+	private static function last_indexed_label( int $post_id ): array {
+		$fields = Indexing::inventory_fields( $post_id );
+		$crawl  = (string) ( $fields['gsc_last_crawl'] ?? '' );
+		if ( '' !== $crawl ) {
+			$formatted = self::format_time( $crawl );
+			return [
+				'label' => $formatted,
+				'title' => sprintf(
+					/* translators: %s: last crawl datetime */
+					__( 'Google last crawled this URL on %s', '4wp-seo-helper' ),
+					$formatted
+				),
+			];
+		}
+
+		$requested = (int) ( $fields['gsc_index_requested_at'] ?? 0 );
+		if ( $requested > 0 ) {
+			$formatted = wp_date( 'd.m.Y H:i', $requested );
+			return [
+				'label' => sprintf(
+					/* translators: %s: datetime when indexing was requested */
+					__( 'Requested %s', '4wp-seo-helper' ),
+					is_string( $formatted ) ? $formatted : ''
+				),
+				'title' => __( 'Indexing requested, waiting for crawl', '4wp-seo-helper' ),
+			];
+		}
+
+		return [
+			'label' => __( 'Not yet', '4wp-seo-helper' ),
+			'title' => __( 'No crawl or index request recorded', '4wp-seo-helper' ),
+		];
 	}
 
 	/**
@@ -232,7 +251,7 @@ final class AdminBar {
 			return null;
 		}
 
-		$raw = get_post_meta( $post_id, Indexing::META_LAST_STATUS, true );
+		$raw      = get_post_meta( $post_id, Indexing::META_LAST_STATUS, true );
 		$coverage = '';
 		$link     = '';
 		if ( is_string( $raw ) && '' !== $raw ) {
@@ -248,6 +267,7 @@ final class AdminBar {
 		if ( '' !== $site ) {
 			$url = PropertyResolver::rewrite_url_for_property( $url, $site );
 		}
+		unset( $url );
 
 		$href = PropertyResolver::is_valid_inspection_result_link( $link )
 			? $link
@@ -256,7 +276,7 @@ final class AdminBar {
 			$href = admin_url( 'admin.php?page=' . Menu::SETTINGS_PAGE_SLUG . '&tab=gsc' );
 		}
 
-		$status = '' !== $coverage ? $coverage : __( 'Not inspected yet', '4wp-seo-helper' );
+		$status = '' !== $coverage ? $coverage : __( 'Inspect URL', '4wp-seo-helper' );
 
 		return [
 			'title' => self::dot( self::gsc_tone( $coverage ), __( 'Search Console', '4wp-seo-helper' ) )
@@ -264,6 +284,16 @@ final class AdminBar {
 				. '<span class="forwp-seo-ab-value">' . esc_html( $status ) . '</span>',
 			'href'  => $href,
 		];
+	}
+
+	private static function format_time( string $iso ): string {
+		$ts = strtotime( $iso );
+		if ( false === $ts ) {
+			return $iso;
+		}
+
+		$formatted = wp_date( 'd.m.Y H:i', $ts );
+		return is_string( $formatted ) ? $formatted : $iso;
 	}
 
 	private static function dot( string $tone, string $label ): string {
@@ -306,14 +336,10 @@ final class AdminBar {
 	private static function seo_payload( int $post_id ): array {
 		$adapter = SeoMetaRegistry::get_active();
 		$scores  = $adapter->read_scores( $post_id );
-		$meta    = $adapter->read( $post_id );
 
 		return [
-			'seo'           => $scores['seo'],
-			'readability'   => $scores['readability'],
-			'label'         => (string) $scores['label'],
-			'noFocus'       => (bool) $scores['no_focus'],
-			'focusKeyword'  => (string) ( $meta['focus_keyword'] ?? '' ),
+			'seo'     => $scores['seo'],
+			'noFocus' => (bool) $scores['no_focus'],
 		];
 	}
 

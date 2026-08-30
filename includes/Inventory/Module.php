@@ -6,6 +6,7 @@
 namespace Forwp\SeoHelper\Inventory;
 
 use Forwp\SeoHelper\Admin\InventoryExport;
+use Forwp\SeoHelper\Admin\InventoryPage;
 use Forwp\SeoHelper\Inventory\Rest\Cors;
 use Forwp\SeoHelper\Inventory\Rest\InventoryRest;
 
@@ -35,6 +36,8 @@ final class Module {
 		if ( false === get_option( self::OPTION_ENABLED, false ) ) {
 			update_option( self::OPTION_ENABLED, '1' );
 		}
+
+		HistorySchema::install();
 	}
 
 	private function __construct() {
@@ -42,8 +45,17 @@ final class Module {
 		Cors::register();
 		add_action( 'registered_post_type', [ PostTypeDiscovery::class, 'reset' ] );
 
+		if ( ! HistorySchema::tables_exist() ) {
+			HistorySchema::install();
+		} else {
+			HistorySchema::maybe_upgrade();
+		}
+
+		HistoryLogger::init();
+
 		if ( is_admin() ) {
 			InventoryExport::init();
+			InventoryPage::init();
 		}
 	}
 
