@@ -8,7 +8,7 @@ Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Site-wide SEO inventory with P1–P3 priorities, REST sync, and Google Search Console — OAuth, analytics, URL inspection, and indexing tools. Works with Yoast SEO and All in One SEO.
+Site-wide SEO inventory and Google Search Console in wp-admin—P1–P3 lanes, REST sync, URL inspection, indexing. Yoast & AIOSEO.
 
 == Description ==
 
@@ -18,7 +18,7 @@ Version **2.0** adds a full **Google Search Console** workspace inside wp-admin:
 
 Built for teams that use **Yoast SEO** or **All in One SEO** and need one place to audit SEO fields across posts, pages, and public custom post types.
 
-A plugin by [4wp.dev](https://4wp.dev/).
+A plugin by [4wp.dev](https://4wp.dev/). Overview and setup notes: [4WP SEO Helper on 4wp.dev](https://4wp.dev/plugin/4wp-seo-helper/).
 
 = Perfect for =
 
