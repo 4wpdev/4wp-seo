@@ -8,7 +8,7 @@ Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Site-wide SEO inventory with P1–P3 priorities, REST sync, and Google Search Console — OAuth, analytics, URL inspection, and indexing tools. Works with Yoast SEO and All in One SEO.
+Site-wide SEO inventory and Google Search Console in wp-admin—P1–P3 lanes, REST sync, URL inspection, indexing. Yoast & AIOSEO.
 
 == Description ==
 
