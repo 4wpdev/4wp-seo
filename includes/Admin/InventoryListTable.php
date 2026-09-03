@@ -5,7 +5,6 @@
 
 namespace Forwp\SeoHelper\Admin;
 
-use Forwp\SeoHelper\Admin\DashboardPage;
 use Forwp\SeoHelper\Core\Release;
 use Forwp\SeoHelper\Gsc\Admin as GscAdmin;
 use Forwp\SeoHelper\Gsc\Module as GscModule;
@@ -518,10 +517,10 @@ final class InventoryListTable extends \WP_List_Table {
 			);
 		}
 
-		$actions['history'] = sprintf(
+		$actions['dynamics'] = sprintf(
 			'<a href="%s">%s</a>',
-			esc_url( DashboardPage::post_history_url( $post_id ) ),
-			esc_html__( 'History', '4wp-seo-helper' )
+			esc_url( DynamicsPage::url_for_post( $post_id ) ),
+			esc_html__( 'Dynamics', '4wp-seo-helper' )
 		);
 
 		return $output . $this->row_actions( $actions, true );
@@ -831,22 +830,34 @@ final class InventoryListTable extends \WP_List_Table {
 	 * @param array<string, mixed> $item
 	 */
 	private function render_gsc_actions_cell( array $item ): string {
+		$gsc       = GscAdmin::get_instance();
 		$post_id   = (int) ( $item['post_id'] ?? 0 );
 		$published = 'publish' === (string) ( $item['status'] ?? '' );
+		$ready     = $gsc->is_connected() && '' !== GscAdmin::get_site_property();
 		$disabled  = $published ? '' : ' disabled aria-disabled="true"';
 
-		return sprintf(
+		$html = sprintf(
 			'<div class="forwp-seo-gsc-actions">' .
-			'<button type="button" class="button button-small forwp-seo-gsc-refresh" data-post-id="%1$d"%2$s title="%5$s">%3$s</button>' .
-			'<button type="button" class="button button-small forwp-seo-gsc-request-index" data-post-id="%1$d"%2$s title="%6$s">%4$s</button>' .
-			'</div>',
+			'<button type="button" class="button button-small forwp-seo-gsc-refresh" data-post-id="%1$d"%2$s title="%3$s">%4$s</button>',
 			$post_id,
 			$disabled,
-			esc_html__( 'Refresh status', '4wp-seo-helper' ),
-			esc_html__( 'Request indexing', '4wp-seo-helper' ),
 			esc_attr__( 'Fetch latest index status from Google Search Console', '4wp-seo-helper' ),
-			esc_attr__( 'Open Search Console to request indexing for this URL', '4wp-seo-helper' )
+			esc_html__( 'Refresh status', '4wp-seo-helper' )
 		);
+
+		if ( $ready ) {
+			$html .= sprintf(
+				'<button type="button" class="button button-small forwp-seo-gsc-request-index" data-post-id="%1$d"%2$s title="%4$s">%3$s</button>',
+				$post_id,
+				$disabled,
+				esc_html__( 'Request indexing', '4wp-seo-helper' ),
+				esc_attr__( 'Open Search Console to request indexing for this URL', '4wp-seo-helper' )
+			);
+		}
+
+		$html .= '</div>';
+
+		return $html;
 	}
 
 	/**

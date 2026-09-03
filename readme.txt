@@ -198,7 +198,8 @@ No Google API calls are made until an administrator configures OAuth credentials
 = 2.1.0 =
 * Inventory: real pagination tied to Screen Options; type filter no longer collides with WP `post_type`.
 * Inventory: persist excluded post types; two-column Quick Edit with GSC keyword suggestions.
-* Dashboard: URL change history (index, crawl, content, SEO, GSC) plus weak-page and weekly-growth KPIs.
+* Dynamics: per-URL change list and detail (index, crawl, content, SEO, GSC); inventory row action opens it.
+* Dashboard: weak-page and weekly-growth KPIs (change timeline lives under Dynamics).
 * Admin bar: fewer items — page permalink, last indexed date, Search Console, inventory jump (works with pagination), Edit.
 
 = 2.0.0 =

@@ -22,6 +22,7 @@ final class Menu {
 	public const GSC_PAGE_SLUG             = 'forwp-seo-gsc';
 	public const OAUTH_PAGE_SLUG           = 'forwp-seo-gsc-oauth';
 	public const INVENTORY_PAGE_SLUG       = 'forwp-seo-inventory';
+	public const DYNAMICS_PAGE_SLUG        = 'forwp-seo-dynamics';
 	public const INVENTORY_POST_TYPE_ARG   = 'forwp_post_type';
 	public const INVENTORY_PER_PAGE_OPTION  = 'forwp_seo_inventory_per_page';
 	public const INVENTORY_PER_PAGE_DEFAULT = 20;
@@ -36,6 +37,9 @@ final class Menu {
 
 	/** @var string|null */
 	private static $gsc_page_hook = null;
+
+	/** @var string|null */
+	private static $dynamics_page_hook = null;
 
 	public static function get_instance(): self {
 		if ( null === self::$instance ) {
@@ -90,6 +94,15 @@ final class Menu {
 			[ InventoryPage::class, 'render' ]
 		);
 
+		self::$dynamics_page_hook = add_submenu_page(
+			self::PAGE_SLUG,
+			__( 'Dynamics', '4wp-seo-helper' ),
+			__( 'Dynamics', '4wp-seo-helper' ),
+			'manage_options',
+			self::DYNAMICS_PAGE_SLUG,
+			[ DynamicsPage::class, 'render' ]
+		);
+
 		if ( Release::is_module_public( Release::MODULE_GSC ) ) {
 			add_submenu_page(
 				null,
@@ -110,10 +123,6 @@ final class Menu {
 				self::GSC_PAGE_SLUG,
 				[ GscPage::class, 'render' ]
 			);
-
-			if ( ! GscAdmin::get_instance()->is_menu_visible() ) {
-				remove_submenu_page( self::PAGE_SLUG, self::GSC_PAGE_SLUG );
-			}
 		}
 
 		self::$settings_page_hook = add_submenu_page(
@@ -159,12 +168,18 @@ final class Menu {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Legacy admin URL redirects.
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
-		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
+		$page         = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+		$tab          = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
+		$history_post = isset( $_GET['history_post'] ) ? absint( wp_unslash( (string) $_GET['history_post'] ) ) : 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( self::PAGE_SLUG !== $page ) {
 			return;
+		}
+
+		if ( $history_post > 0 ) {
+			wp_safe_redirect( DynamicsPage::url_for_post( $history_post ) );
+			exit;
 		}
 
 		if ( 'gsc' === $tab ) {
@@ -213,7 +228,10 @@ final class Menu {
 	}
 
 	public function enqueue_admin_assets( string $hook_suffix ): void {
-		if ( 'toplevel_page_' . self::PAGE_SLUG === $hook_suffix ) {
+		if (
+			'toplevel_page_' . self::PAGE_SLUG === $hook_suffix
+			|| ( is_string( self::$dynamics_page_hook ) && self::$dynamics_page_hook === $hook_suffix )
+		) {
 			wp_enqueue_style(
 				'forwp-seo-admin-settings',
 				FORWP_SEO_HELPER_URL . 'assets/css/admin-settings.css',
@@ -289,6 +307,35 @@ final class Menu {
 				'option'  => self::INVENTORY_PER_PAGE_OPTION,
 			]
 		);
+
+		$this->ensure_inventory_gsc_columns_visible();
+	}
+
+	/**
+	 * GSC index columns must stay visible — users rely on them daily.
+	 */
+	private function ensure_inventory_gsc_columns_visible(): void {
+		if ( ! InventoryPage::should_show_gsc_indexing() ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen instanceof \WP_Screen ) {
+			return;
+		}
+
+		$gsc_cols = [ 'gsc_index_status', 'gsc_index_requested', 'gsc_last_crawl', 'gsc_actions' ];
+		$key      = 'manage' . $screen->id . 'columnshidden';
+		$hidden   = get_user_option( $key );
+
+		if ( ! is_array( $hidden ) ) {
+			return;
+		}
+
+		$next = array_values( array_diff( $hidden, $gsc_cols ) );
+		if ( $next !== $hidden ) {
+			update_user_option( get_current_user_id(), $key, $next );
+		}
 	}
 
 	public function enqueue_inventory_assets(): void {

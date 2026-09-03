@@ -214,59 +214,57 @@ final class Admin {
 			</p>
 
 			<?php if ( ! $is_ready ) : ?>
-				<div class="forwp-seo-panel">
-					<p class="forwp-seo-admin-muted">
-						<?php esc_html_e( 'Connect Google Search Console and choose a property under Settings → Search Console.', '4wp-seo-helper' ); ?>
+				<div class="notice notice-warning inline">
+					<p>
+						<?php esc_html_e( 'Connect Google and pick a Search Console property to load analytics. URL Inspection and Inventory index actions need this first.', '4wp-seo-helper' ); ?>
+						<a href="<?php echo esc_url( $this->get_settings_url() ); ?>"><?php esc_html_e( 'GSC settings', '4wp-seo-helper' ); ?></a>
 					</p>
-					<a class="button button-primary" href="<?php echo esc_url( $this->get_settings_url() ); ?>">
-						<?php esc_html_e( 'Open Search Console settings', '4wp-seo-helper' ); ?>
-					</a>
 				</div>
-			<?php else : ?>
-				<div class="forwp-seo-gsc-app">
-					<div class="forwp-seo-gsc-layout forwp-seo-tab-panel forwp-seo-tab-panel--vertical">
-						<nav class="forwp-seo-gsc-sidebar components-tab-panel__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Search Console sections', '4wp-seo-helper' ); ?>">
-							<?php $this->render_tab_button( self::TAB_OVERVIEW, __( 'Overview', '4wp-seo-helper' ), $tab ); ?>
-							<?php $this->render_tab_button( self::TAB_INSIGHTS, __( 'Insights', '4wp-seo-helper' ), $tab ); ?>
-							<?php $this->render_tab_button( self::TAB_PERFORMANCE, __( 'Performance', '4wp-seo-helper' ), $tab ); ?>
-							<?php $this->render_tab_button( self::TAB_INSPECTION, __( 'URL Inspection', '4wp-seo-helper' ), $tab ); ?>
-							<?php $this->render_tab_button( self::TAB_SYNC, __( 'Data sync', '4wp-seo-helper' ), $tab ); ?>
-						</nav>
+			<?php endif; ?>
 
-						<div class="forwp-seo-gsc-content">
+			<div class="forwp-seo-gsc-app">
+				<div class="forwp-seo-gsc-layout forwp-seo-tab-panel forwp-seo-tab-panel--vertical">
+					<nav class="forwp-seo-gsc-sidebar components-tab-panel__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Search Console sections', '4wp-seo-helper' ); ?>">
+						<?php $this->render_tab_button( self::TAB_OVERVIEW, __( 'Overview', '4wp-seo-helper' ), $tab ); ?>
+						<?php $this->render_tab_button( self::TAB_INSIGHTS, __( 'Insights', '4wp-seo-helper' ), $tab ); ?>
+						<?php $this->render_tab_button( self::TAB_PERFORMANCE, __( 'Performance', '4wp-seo-helper' ), $tab ); ?>
+						<?php $this->render_tab_button( self::TAB_INSPECTION, __( 'URL Inspection', '4wp-seo-helper' ), $tab ); ?>
+						<?php $this->render_tab_button( self::TAB_SYNC, __( 'Data sync', '4wp-seo-helper' ), $tab ); ?>
+					</nav>
+
+					<div class="forwp-seo-gsc-content">
+						<?php
+						PageRenderer::render_period_selector(
+							$tab,
+							$report_days,
+							self::TAB_PERFORMANCE === $tab ? [ 'dimension' => $perf_dimension ] : []
+						);
+						?>
+						<div id="forwp-seo-panel-overview" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-overview" <?php echo self::TAB_OVERVIEW !== $tab ? 'hidden' : ''; ?>>
+							<?php PageRenderer::render_overview_tab( $is_ready ? $insights->build_overview( $site, $report_days ) : [] ); ?>
+						</div>
+						<div id="forwp-seo-panel-insights" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-insights" <?php echo self::TAB_INSIGHTS !== $tab ? 'hidden' : ''; ?>>
+							<?php PageRenderer::render_insights_tab( $is_ready ? $insights->build_cards( $site, $report_days ) : [] ); ?>
+						</div>
+						<div id="forwp-seo-panel-performance" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-performance" <?php echo self::TAB_PERFORMANCE !== $tab ? 'hidden' : ''; ?>>
+							<?php PageRenderer::render_performance_tab( $site, $perf_dimension, $report_days ); ?>
+						</div>
+						<div id="forwp-seo-panel-inspection" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-inspection" <?php echo self::TAB_INSPECTION !== $tab ? 'hidden' : ''; ?>>
+							<?php $this->render_inspection_tab( $site ); ?>
+						</div>
+						<div id="forwp-seo-panel-sync" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-sync" <?php echo self::TAB_SYNC !== $tab ? 'hidden' : ''; ?>>
 							<?php
-							PageRenderer::render_period_selector(
-								$tab,
-								$report_days,
-								self::TAB_PERFORMANCE === $tab ? [ 'dimension' => $perf_dimension ] : []
+							PageRenderer::render_sync_tab(
+								$site,
+								$sync_running,
+								$repository->get_recent_sync_logs( $site, 15 ),
+								$repository->get_last_successful_sync( $site )
 							);
 							?>
-							<div id="forwp-seo-panel-overview" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-overview" <?php echo self::TAB_OVERVIEW !== $tab ? 'hidden' : ''; ?>>
-								<?php PageRenderer::render_overview_tab( $insights->build_overview( $site, $report_days ) ); ?>
-							</div>
-							<div id="forwp-seo-panel-insights" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-insights" <?php echo self::TAB_INSIGHTS !== $tab ? 'hidden' : ''; ?>>
-								<?php PageRenderer::render_insights_tab( $insights->build_cards( $site, $report_days ) ); ?>
-							</div>
-							<div id="forwp-seo-panel-performance" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-performance" <?php echo self::TAB_PERFORMANCE !== $tab ? 'hidden' : ''; ?>>
-								<?php PageRenderer::render_performance_tab( $site, $perf_dimension, $report_days ); ?>
-							</div>
-							<div id="forwp-seo-panel-inspection" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-inspection" <?php echo self::TAB_INSPECTION !== $tab ? 'hidden' : ''; ?>>
-								<?php $this->render_inspection_tab( $site ); ?>
-							</div>
-							<div id="forwp-seo-panel-sync" role="tabpanel" class="components-tab-panel__tab-content" aria-labelledby="forwp-seo-tab-sync" <?php echo self::TAB_SYNC !== $tab ? 'hidden' : ''; ?>>
-								<?php
-								PageRenderer::render_sync_tab(
-									$site,
-									$sync_running,
-									$repository->get_recent_sync_logs( $site, 15 ),
-									$repository->get_last_successful_sync( $site )
-								);
-								?>
-							</div>
 						</div>
 					</div>
 				</div>
-			<?php endif; ?>
+			</div>
 		</div>
 		<?php
 	}
@@ -322,7 +320,7 @@ final class Admin {
 			<p class="forwp-seo-intro-card__text">
 				<?php esc_html_e( 'OAuth credentials, Google account connection, and Search Console property selection.', '4wp-seo-helper' ); ?>
 			</p>
-			<?php if ( $module_enabled && $this->is_menu_visible() ) : ?>
+			<?php if ( $module_enabled ) : ?>
 				<div class="forwp-seo-intro-card__actions">
 					<a class="button button-primary" href="<?php echo esc_url( $this->get_page_url( self::TAB_OVERVIEW ) ); ?>">
 						<?php esc_html_e( 'Open GSC tools', '4wp-seo-helper' ); ?>

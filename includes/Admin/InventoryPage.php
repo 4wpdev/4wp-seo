@@ -193,7 +193,7 @@ final class InventoryPage {
 		<div class="wrap forwp-seo-inventory">
 			<h1><?php esc_html_e( 'SEO Inventory', '4wp-seo-helper' ); ?></h1>
 			<p>
-				<?php esc_html_e( 'Full list grouped by priority tier (P1 → P2 → P3 → Other). Drag rows to reorder or move between groups. Priority reflects business importance, not SEO score.', '4wp-seo-helper' ); ?>
+				<?php esc_html_e( 'Site-wide SEO fields. Use Index status / Request indexing on each row when Search Console is connected.', '4wp-seo-helper' ); ?>
 				<?php if ( self::should_show_gsc_metrics() ) : ?>
 					<?php
 					printf(
@@ -214,6 +214,22 @@ final class InventoryPage {
 
 			<?php self::render_tabs( 'inventory' ); ?>
 
+			<?php if ( ! GscModule::get_instance()->is_enabled() ) : ?>
+				<div class="notice notice-warning">
+					<p>
+						<?php esc_html_e( 'Search Console is turned off — Index columns are hidden. Enable GSC in plugin settings to get Index status / Request indexing back.', '4wp-seo-helper' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::SETTINGS_PAGE_SLUG . '&tab=gsc' ) ); ?>"><?php esc_html_e( 'GSC settings', '4wp-seo-helper' ); ?></a>
+					</p>
+				</div>
+			<?php elseif ( self::should_show_gsc_indexing() && ( ! GscAdmin::get_instance()->is_connected() || '' === GscAdmin::get_site_property() ) ) : ?>
+				<div class="notice notice-warning">
+					<p>
+						<?php esc_html_e( 'Index columns are shown, but Search Console is not ready. Connect Google and pick a property — then use Refresh status / Request indexing in the Index actions column.', '4wp-seo-helper' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . Menu::GSC_PAGE_SLUG ) ); ?>"><?php esc_html_e( 'Open GSC', '4wp-seo-helper' ); ?></a>
+					</p>
+				</div>
+			<?php endif; ?>
+
 			<?php if ( $filters['post_id'] > 0 ) : ?>
 				<div class="notice notice-info">
 					<p>
@@ -231,7 +247,6 @@ final class InventoryPage {
 				</div>
 			<?php endif; ?>
 
-			<?php self::render_compact_panels( 'inventory', null ); ?>
 			<p class="forwp-seo-inventory__drag-status" aria-live="polite"></p>
 
 			<div class="forwp-seo-inventory__stats">
@@ -677,15 +692,7 @@ final class InventoryPage {
 	}
 
 	public static function should_show_gsc_indexing(): bool {
-		if ( ! Release::is_module_public( Release::MODULE_GSC ) || ! GscModule::get_instance()->is_enabled() ) {
-			return false;
-		}
-
-		$admin = GscAdmin::get_instance();
-		if ( ! $admin->is_connected() ) {
-			return false;
-		}
-
-		return '' !== GscAdmin::get_site_property();
+		return Release::is_module_public( Release::MODULE_GSC )
+			&& GscModule::get_instance()->is_enabled();
 	}
 }

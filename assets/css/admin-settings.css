@@ -780,6 +780,22 @@
 	color: #8a2424;
 }
 
+.forwp-seo-dynamics-search {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.forwp-seo-dynamics-search input[type="search"] {
+	min-width: 240px;
+}
+
+.forwp-seo-dynamics-table {
+	margin-top: 8px;
+}
+
 @media (max-width: 960px) {
 	.forwp-seo-dash-split {
 		grid-template-columns: 1fr;

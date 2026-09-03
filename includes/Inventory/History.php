@@ -81,6 +81,107 @@ final class History {
 	}
 
 	/**
+	 * Pages that already have at least one recorded event.
+	 *
+	 * @return array{items: list<array{post_id:int,event_count:int,last_at:string,last_type:string}>, total: int}
+	 */
+	public static function listed_posts( int $page = 1, int $per_page = 20, string $search = '' ): array {
+		$empty = [
+			'items' => [],
+			'total' => 0,
+		];
+
+		if ( ! HistorySchema::tables_exist() ) {
+			return $empty;
+		}
+
+		global $wpdb;
+		$table    = HistorySchema::table_name();
+		$per_page = max( 1, min( 100, $per_page ) );
+		$page     = max( 1, $page );
+		$offset   = ( $page - 1 ) * $per_page;
+		$search   = sanitize_text_field( $search );
+
+		$join  = "INNER JOIN {$wpdb->posts} p ON p.ID = h.post_id";
+		$where = "p.post_status NOT IN ('trash','auto-draft','inherit')";
+		$args  = [];
+
+		if ( '' !== $search ) {
+			$where .= ' AND p.post_title LIKE %s';
+			$args[] = '%' . $wpdb->esc_like( $search ) . '%';
+		}
+
+		$count_sql = "SELECT COUNT(DISTINCT h.post_id) FROM {$table} h {$join} WHERE {$where}";
+		if ( [] !== $args ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name and optional search.
+			$count_sql = $wpdb->prepare( $count_sql, ...$args );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$total = (int) $wpdb->get_var( $count_sql );
+
+		$list_sql  = "SELECT h.post_id, COUNT(*) AS event_count, MAX(h.occurred_at) AS last_at, MAX(h.id) AS last_id
+			FROM {$table} h
+			{$join}
+			WHERE {$where}
+			GROUP BY h.post_id
+			ORDER BY last_at DESC, h.post_id DESC
+			LIMIT %d OFFSET %d";
+		$list_args = array_merge( $args, [ $per_page, $offset ] );
+		$prepared  = $wpdb->prepare( $list_sql, ...$list_args );
+
+		if ( ! is_string( $prepared ) || '' === $prepared ) {
+			return $empty;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results( $prepared, ARRAY_A );
+		if ( ! is_array( $rows ) || [] === $rows ) {
+			return [
+				'items' => [],
+				'total' => $total,
+			];
+		}
+
+		$last_ids = [];
+		foreach ( $rows as $row ) {
+			$last_ids[] = (int) ( $row['last_id'] ?? 0 );
+		}
+		$last_ids = array_values( array_filter( $last_ids ) );
+		$types    = [];
+
+		if ( [] !== $last_ids ) {
+			$id_sql = implode( ',', array_map( 'absint', $last_ids ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$type_rows = $wpdb->get_results(
+				"SELECT id, event_type FROM {$table} WHERE id IN ({$id_sql})",
+				ARRAY_A
+			);
+			if ( is_array( $type_rows ) ) {
+				foreach ( $type_rows as $type_row ) {
+					$types[ (int) ( $type_row['id'] ?? 0 ) ] = sanitize_key( (string) ( $type_row['event_type'] ?? '' ) );
+				}
+			}
+		}
+
+		$items = [];
+		foreach ( $rows as $row ) {
+			$last_id = (int) ( $row['last_id'] ?? 0 );
+			$items[] = [
+				'post_id'      => (int) ( $row['post_id'] ?? 0 ),
+				'event_count'  => (int) ( $row['event_count'] ?? 0 ),
+				'last_at'      => (string) ( $row['last_at'] ?? '' ),
+				'last_type'    => $types[ $last_id ] ?? '',
+			];
+		}
+
+		return [
+			'items' => $items,
+			'total' => $total,
+		];
+	}
+
+	/**
 	 * @return list<array<string, mixed>>
 	 */
 	public static function recent( int $limit = 25 ): array {

@@ -3,7 +3,7 @@
  * Plugin Name: 4WP SEO Helper
  * Plugin URI:        https://4wp.dev/plugin/4wp-seo-helper/
  * Description: SEO Inventory and Google Search Console for WordPress — audit SEO fields site-wide, set P1–P3 priorities, sync Search Analytics, inspect URLs. Works with Yoast SEO and All in One SEO.
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: 4wp.dev
  * Requires PHP: 8.0
  * Requires at least: 6.0
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define(
 	'FORWP_SEO_HELPER_VERSION',
-	(string) ( get_file_data( __FILE__, [ 'Version' => 'Version' ] )['Version'] ?? '2.1.0' )
+	(string) ( get_file_data( __FILE__, [ 'Version' => 'Version' ] )['Version'] ?? '2.2.0' )
 );
 define( 'FORWP_SEO_HELPER_FILE', __FILE__ );
 define( 'FORWP_SEO_HELPER_PATH', plugin_dir_path( __FILE__ ) );
